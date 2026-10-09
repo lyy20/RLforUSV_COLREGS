@@ -683,6 +683,9 @@ class MASAC:
             ri = rule_imitation_loss.cpu().detach().item()
             cl = critic_loss.cpu().detach().item()
             self.last_rule_update_stats[agent_number] = {
+                'actor_loss': float(al),
+                'critic_loss': float(cl),
+                'alpha_loss': float(alpha_loss_value),
                 'rule_batch_size': int(rule_batch_size),
                 'rule_imitation_loss': float(ri),
                 'weighted_rule_loss': float(self.rule_imitation_weight * ri),

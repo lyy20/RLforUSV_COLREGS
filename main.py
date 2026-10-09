@@ -406,6 +406,68 @@ def restore_priority(priority_state, parallel_envs):
     return np.ones(parallel_envs)
 
 
+_RUNTIME_TEACHER_QUERY_STATS = {'rate': 0.0, 'coverage': 0.0}
+
+
+class ScalarWhitelistWriter:
+    """只允许白名单内的标量写入 TensorBoard，减少 I/O 与存储。
+
+    匹配规则：标签最后一段（或完整标签）命中白名单即放行；白名单为空表示不过滤。
+    """
+
+    def __init__(self, writer, whitelist):
+        self._writer = writer
+        self._allow = set(str(x).strip() for x in (whitelist or []) if str(x).strip())
+
+    def _permitted(self, tag):
+        if not self._allow:
+            return True
+        tag = str(tag)
+        return (tag in self._allow) or (tag.split('/')[-1] in self._allow)
+
+    def add_scalar(self, tag, *args, **kwargs):
+        if self._permitted(tag):
+            return self._writer.add_scalar(tag, *args, **kwargs)
+        return None
+
+    def add_scalars(self, tag, *args, **kwargs):
+        if not self._allow:
+            return self._writer.add_scalars(tag, *args, **kwargs)
+        scalars = args[0] if args else kwargs.get('scalar_dict', {})
+        kept = dict((k, v) for k, v in (scalars or {}).items() if str(k) in self._allow)
+        if not kept:
+            return None
+        rest = list(args[1:]) if len(args) > 1 else []
+        return self._writer.add_scalars(tag, kept, *rest)
+
+    def __getattr__(self, item):
+        return getattr(self._writer, item)
+
+
+DEFAULT_SCALAR_WHITELIST = [
+    'mean_episode_rewards', 'agent_collision_episode', 'agent_outofworld_episode',
+    'done_reason_success_episode', 'target_distance_mean_episode',
+    'capture_distance_mean_episode', 'min_clearance_mean_episode',
+    'rule_filter_active_rate_episode', 'action_chain_raw_to_constrained_mean_episode',
+    'action_chain_constrained_to_rule_mean_episode',
+    'action_chain_rule_to_smoothed_mean_episode', 'size', 'fill_ratio',
+    'teacher_query_rate', 'teacher_query_coverage', 'teacher_confidence_mean',
+    'teacher_valid_rate', 'unknown_type_rate', 'rudder_angle_abs_deg_mean_episode',
+    'yaw_rate_abs_deg_s_mean_episode', 'reward_component_progress_episode',
+    'reward_component_safety_episode', 'reward_component_success_episode',
+    'reward_component_intervention_episode', 'mean_episode_error',
+    'actor_loss_episode', 'critic_loss_episode', 'alpha_loss_episode',
+    'rule_imitation_loss_episode',
+]
+
+
+def build_scalar_whitelist(config):
+    if config.has_option('hyperparam', 'TENSORBOARD_SCALAR_WHITELIST'):
+        raw = config.get('hyperparam', 'TENSORBOARD_SCALAR_WHITELIST')
+        return [x.strip() for x in raw.split(',') if x.strip()]
+    return list(DEFAULT_SCALAR_WHITELIST)
+
+
 class NoOpSummaryWriter:
     """非 TensorBoard 记录回合使用的空 logger，保证训练更新不被日志频率影响。"""
 
@@ -1409,6 +1471,16 @@ def append_episode_metric_windows(
         )
 
 
+def log_trainer_losses(logger, trainer, episode, num_agents):
+    """把训练器最近一次更新的关键损失写入 TensorBoard（此前被 NoOp 日志吞掉）。"""
+    stats = getattr(trainer, 'last_rule_update_stats', None) or {}
+    for agent_i in range(int(num_agents)):
+        row = stats.get(agent_i) or stats.get(str(agent_i)) or {}
+        for key in ('actor_loss', 'critic_loss', 'alpha_loss', 'rule_imitation_loss'):
+            if key in row:
+                logger.add_scalar('agent%i/%s_episode' % (agent_i, key), float(row[key]), episode)
+
+
 def log_metric_windows(logger, metric_windows, episode, num_agents, num_landmarks):
     """统一向 TensorBoard 写入最近 N 回合窗口统计。"""
     for agent_i in range(num_agents):
@@ -2069,6 +2141,10 @@ def main():
         max_queue=tensorboard_max_queue,
         flush_secs=tensorboard_flush_secs,
     )
+
+    _scalar_whitelist = build_scalar_whitelist(config)
+    logger = ScalarWhitelistWriter(logger, _scalar_whitelist)
+    print('scalar_whitelist     =  ', len(_scalar_whitelist) if _scalar_whitelist else 'ALL')
     null_logger = NoOpSummaryWriter()
     profiler = TrainingProfiler(enabled=profile_training, device=DEVICE)
     obs_dim = observation_dim(num_ob, num_static_ob_slots)
@@ -2551,16 +2627,8 @@ def main():
                     rule_buffer.push_batch(rule_records)
                     _q_rows = [r for r in rule_records if r.get('teacher_query')]
                     _q_valid = [r for r in _q_rows if r.get('teacher_valid')]
-                    logger.add_scalar(
-                        'rule_buffer/teacher_query_rate',
-                        float(len(_q_rows)) / max(float(len(rule_records)), 1.0),
-                        episode,
-                    )
-                    logger.add_scalar(
-                        'rule_buffer/teacher_query_coverage',
-                        float(len(_q_valid)) / max(float(len(_q_rows)), 1.0),
-                        episode,
-                    )
+                    _RUNTIME_TEACHER_QUERY_STATS['rate'] = float(len(_q_rows)) / max(float(len(rule_records)), 1.0)
+                    _RUNTIME_TEACHER_QUERY_STATS['coverage'] = float(len(_q_valid)) / max(float(len(_q_rows)), 1.0)
             update_episode_diagnostics(episode_diagnostics, info, num_agents)
             profiler.toc('info_extract', profile_start)
 
@@ -2811,6 +2879,9 @@ def main():
         ]
         if tensorboard_log_this_episode:
             log_metric_windows(logger, metric_windows, episode, num_agents, num_landmarks)
+            log_trainer_losses(logger, maddpg, episode, num_agents)
+            logger.add_scalar('rule_buffer/teacher_query_rate', _RUNTIME_TEACHER_QUERY_STATS['rate'], episode)
+            logger.add_scalar('rule_buffer/teacher_query_coverage', _RUNTIME_TEACHER_QUERY_STATS['coverage'], episode)
             log_rule_buffer_metrics(logger, rule_buffer, episode, num_agents)
             last_tensorboard_episode = int(episode)
 
