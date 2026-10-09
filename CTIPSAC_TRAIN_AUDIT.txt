@@ -1,0 +1,102 @@
+[hyperparam]
+
+BUFFER_SIZE = 128
+BATCH_SIZE = 4
+GAMMA = 0.99
+TAU = 0.01
+LR_ACTOR = 1e-3
+LR_CRITIC = 1e-4
+WEIGHT_DECAY = 0
+UPDATE_EVERY = 1
+UPDATE_TIMES = 1
+SEED = 11
+number_of_episodes = 6
+episode_length = 200
+
+noise = 0.5
+noise_reduction = 0.9999
+rew_err_th = 0.03
+rew_dis_th = 0.3
+
+EXP_REP_BUF = True
+START_STEPS = 0
+START_POLICY = random
+PRE_TRAINED = False
+PRE_TRAINED_EP = 0.5
+
+SCENARIO = usv_tracking_base
+control_model = usv_3dof
+parallel_envs = 1
+num_agents = 1
+num_landmarks = 1
+num_obstacles = 5
+num_static_obstacles = 8
+map_half_size = 2.0
+static_obstacle_min_size = 0.04
+static_obstacle_max_size = 0.10
+ob_range = 0.8
+num_ob = 3
+num_static_ob_slots = 1
+
+landmark_movable = True
+movement = escape
+obstacle_movable = True
+obstacle_movement = linear
+random_vel = False
+landmark_vel = 0.0003
+max_vel = 0.0003
+landmark_depth = 0.
+pre_method = DIRECT
+# Direct noisy target observation bypasses legacy LS/KM/PF during current training.
+target_observation_mode = direct_noisy
+target_position_noise_std = 0.005
+range_dropping = 0.01
+max_range = 2.0
+max_current_vel = 0.0003
+
+DNN = MASAC
+ALPHA = 0.05
+AUTOMATIC_ENTROPY = False
+RNN = False
+HISTORY_LENGTH = 5
+ICM = False
+ICM_GAMMA = 0.5
+PPO_method = Clip
+CLIP_EPISILON = 0.2
+DIM_1 = 128
+DIM_2 = 128
+CTIP_active = True
+
+REWARD_WINDOWS = 10
+LANDMARK_ERROR_WINDOWS = 10
+COLLISION_OUTWORLD_WINDOWS = 10
+RENDER = False
+PROGRESS_BAR = False
+BENCHMARK = True
+
+# How many episodes between policy/checkpoint saves.
+POLICY_SAVE_INTERVAL = 3
+
+# How many episodes between TensorBoard metric writes.
+TENSORBOARD_LOG_INTERVAL = 2
+
+# Training device: auto / cpu / cuda / cuda:0
+DEVICE = auto
+
+# Lightweight timing profiler for TensorBoard performance/... metrics.
+PROFILE_TRAINING = True
+
+# 奖励配置：保持当前训练的默认奖励语义，可在此处直接调整各项权重。
+REWARD_SUCCESS = 100.0
+REWARD_COLLISION = 120.0
+REWARD_OUT_OF_BOUNDS = 100.0
+REWARD_PROGRESS_WEIGHT = 12.0
+REWARD_RANGE_WEIGHT = 0.5
+REWARD_SAFETY_WEIGHT = 20.0
+REWARD_BOUNDARY_WEIGHT = 8.0
+REWARD_ACTION_SMOOTH_WEIGHT = 0.02
+REWARD_INTERVENTION_ACTIVE_PENALTY = 0.05
+REWARD_INTERVENTION_MAGNITUDE_WEIGHT = 0.25
+REWARD_TIME_PENALTY = 0.05
+REWARD_SAFE_CLEARANCE = 0.15
+REWARD_BOUNDARY_SAFE_DISTANCE = 0.25

@@ -1,0 +1,2 @@
+﻿evaluation_variant,episode_id,episode,seed,placement_mode,done_reason,encounter_events,rule_followed_events,successful_resolution_events,compliant_and_safe_events,policy_rule_follow_rate,safe_resolution_rate,internalization_success_rate,risk_action_steps,rule_violation_steps,anti_rule_steps,rule_violation_step_rate,rule_violation_events,stand_on_emergency_steps,multi_vessel_risk_steps,multi_vessel_risk_events,mean_reaction_delay_steps,filter_activated_events,filter_active_event_rate
+sac,1,1,1000,fixed,timeout,0,0,0,0,,,,0,0,0,,0,0,0,0,,0,

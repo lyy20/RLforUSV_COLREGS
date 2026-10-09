@@ -1,0 +1,413 @@
+# =============================================================================
+# SAC / 比例导引 PN / COLREGs 五基线公平测试（当前 0826 实验）
+# =============================================================================
+# 文件名保留 0823，用于标识 PN 五变体协议最初建立的日期；本文件的训练配置、
+# 断点目录、测试名称均已升级到当前 0826 Body-Frame 实验。
+#
+# 在项目根目录运行：
+#   & 'D:\ANACONDA\Scripts\conda.exe' run --no-capture-output -n RLforUSV_L_T python see_trained_custom.py CUSTOM_EVALUATION_PN_BASELINE_0823.txt
+#
+# 调试示例：只跑 1 个种子、每组最多 10 步，不保存 GIF：
+#   & 'D:\ANACONDA\Scripts\conda.exe' run --no-capture-output -n RLforUSV_L_T python see_trained_custom.py CUSTOM_EVALUATION_PN_BASELINE_0823.txt --episodes 1 --max-steps 10 --no-gif
+#
+# 临时只测试其中两组：
+#   & 'D:\ANACONDA\Scripts\conda.exe' run --no-capture-output -n RLforUSV_L_T python see_trained_custom.py CUSTOM_EVALUATION_PN_BASELINE_0823.txt --variants sac,pn_only
+#
+# 单位约定：位置、半径、间距均为 m；速度为 m/s；时间为 s；角度为 deg；
+# 角速度为 deg/s。脚本进入环境和 PN 计算前会转换为 km/km/s 或 rad/rad/s。
+#
+# 公平比较原则：
+#   1. 同一 episode 的五个变体使用完全相同的 BASE_SEED+i，因此初始地图、
+#      实体尺寸、初始航向、洋流随机值均相同。
+#   2. 五组均经过同一个 3DOF 动力学、动作平滑、边界、碰撞和动态船行为模型。
+#   3. PN 只产生候选动作，绝不直接修改位置，绝不绕过 3DOF 与 COLREGs。
+#   4. 动态/静态观测槽数量来自训练配置，不能在这里更改网络输入维度。
+
+[policy]
+
+# 用于重建已训练 SAC 网络结构的训练配置文件。不可替换为本测试配置。
+TRAINING_CONFIG = SAC_3DOF_ENTITY_ENCODER_0826.txt
+
+# 已训练实验名，必须与 TRAINING_CONFIG 中 TRAINING_RUN_NAME 完全相同。
+# 默认断点目录：D:/USV/logs/<TRAINING_RUN_NAME>/model_dir。
+TRAINING_RUN_NAME = SAC_3DOF_BODY_FRAME_ENTITY_ENCODER_0826
+
+# last 读取最近保存策略；best 读取训练过程认定的最佳策略。
+CHECKPOINT = last
+
+# 断点不在默认日志目录时填写完整 model_dir；留空即使用默认路径。
+MODEL_DIR =
+
+# auto 自动选择 CUDA（可用时）否则 CPU；cpu/cuda 可强制指定。
+DEVICE = auto
+
+[evaluation]
+
+# 测试结果保存名，只允许单个目录名。默认输出到训练日志下的 evaluation 子目录。
+TEST_NAME = PN_FIVE_VARIANTS_0826
+
+# 新的五基线列表，逗号分隔且不能重复：
+#   sac              : 仅 SAC 策略网络，无 PN，无智能体 COLREGs 动作过滤。
+#   pn_only          : 仅 PN 候选动作，无 SAC，无智能体 COLREGs 动作过滤。
+#   sac_pn           : SAC 推力 + SAC/PN 融合舵角，无智能体 COLREGs 动作过滤。
+#   sac_colregs      : SAC 候选动作 + 智能体 COLREGs 安全动作过滤。
+#   sac_pn_colregs   : SAC/PN 融合候选动作 + 智能体 COLREGs 安全动作过滤。
+# 当本项非空时，下面旧版 AGENT_RULE_MODE 不参与运行。
+EVALUATION_VARIANTS = sac,pn_only,sac_pn,sac_colregs,sac_pn_colregs
+
+# 旧版兼容选项：仅当 EVALUATION_VARIANTS 留空时才生效。
+# policy_only 关闭智能体规则过滤；assisted 开启；both 对两者各跑一次。
+AGENT_RULE_MODE = both
+
+# 每个变体的独立测试回合数。论文统计建议至少 100；调试可设 1~5。
+EPISODES = 10
+
+# 每个回合最多环境步数。当前环境 1 s/step，200 即最多仿真 200 s。
+MAX_STEPS = 200
+
+# 基础随机种子。第 i 个 episode 使用 BASE_SEED+i；同种子下五组公平比较。
+BASE_SEED = 1000
+
+[scene]
+
+# 场景脚本名，不含 .py。正式跟踪场景为 usv_tracking_base。
+SCENARIO = usv_tracking_base
+
+# 正方形地图边长；600 表示世界坐标 x/y 均位于 [-300, 300] m。
+MAP_SIZE_M = 600.0
+
+# 智能体和真实目标数量属于训练网络契约，必须与训练配置一致。
+NUM_AGENTS = 1
+NUM_TARGETS = 1
+
+# 测试实际生成的动态船和静态障碍物数量。可改变以做泛化测试；超过训练槽数量
+# 的实体仍存在且运动，只是策略只观察最近的训练槽数量实体。
+NUM_DYNAMIC_OBSTACLES = 2
+NUM_STATIC_OBSTACLES = 3
+
+# 动态/静态障碍物进入观测槽的感知半径；不限制目标坐标测量。
+OBSERVATION_RANGE_M = 200.0
+
+# 智能体与目标中心距离首次小于该半径时，环境立即 success 并结束回合。
+TARGET_SUCCESS_RADIUS_M = 100.0
+
+[entities]
+
+# 智能体、目标的等效碰撞圆半径。
+AGENT_RADIUS_M = 10.0
+TARGET_RADIUS_M = 10.0
+
+# random/seeded_random/stress 布局下的动态船半径采样范围。
+DYNAMIC_RADIUS_MIN_M = 10.0
+DYNAMIC_RADIUS_MAX_M = 20.0
+
+# random/seeded_random/stress 布局下的静态障碍物半径采样范围。
+STATIC_RADIUS_MIN_M = 10.0
+STATIC_RADIUS_MAX_M = 20.0
+
+[movement]
+
+# 目标是否可运动。static 模式下即使为 true 也会静止；其他模式必须为 true。
+TARGET_MOVABLE = false
+
+# 目标模式：static 静止；escape 受限逃逸；linear 平滑直航；random 强随机；
+# levy Levy 随机游走。PN 测试基线默认 static，便于先验证截获过程。
+TARGET_MOVEMENT = static
+
+# 目标速度区间及初速。static 下这些值保留为切换其他目标模式时的可复用参数。
+TARGET_SPEED_MPS = 1.4
+TARGET_MIN_SPEED_MPS = 0.8
+TARGET_MAX_SPEED_MPS = 2.0
+TARGET_INITIAL_SPEED_MPS = 1.4
+
+# 目标最大加速度、减速度、转向率和航向随机扰动，均用于保证运动连续性。
+TARGET_MAX_ACCEL_MPS2 = 0.15
+TARGET_MAX_DECEL_MPS2 = 0.20
+TARGET_MAX_TURN_RATE_DEG_S = 4.0
+TARGET_HEADING_NOISE_DEG_S = 1.0
+
+# 目标速度意图更新的最短/最长间隔，以及单次意图速度变化上限。
+TARGET_SPEED_CHANGE_INTERVAL_MIN_S = 3.0
+TARGET_SPEED_CHANGE_INTERVAL_MAX_S = 8.0
+TARGET_SPEED_STEP_MPS = 0.20
+
+# 目标紧急避碰时允许降到的最低速度；0 表示允许临时停船。
+TARGET_EMERGENCY_STOP_SPEED_MPS = 0.0
+
+# 目标是否参与 COLREGs 规则判断、是否启用预测性避碰。与智能体规则层独立。
+TARGET_COLREGS_ENABLED = true
+TARGET_PREDICTIVE_AVOIDANCE_ENABLED = true
+
+# 动态障碍船是否运动；false 会退化为具有船舶类别的静态实体。
+DYNAMIC_MOVABLE = true
+
+# 动态船模式：linear 推荐正式测试；random/levy 用于更强的分布外压力测试。
+DYNAMIC_MOVEMENT = linear
+
+# 是否使用遗留随机速度逻辑。false 时下方 min/max 直接定义均匀采样范围。
+DYNAMIC_RANDOM_SPEED = false
+
+# 动态船速度下限和上限。
+DYNAMIC_MIN_SPEED_MPS = 1.0
+DYNAMIC_MAX_SPEED_MPS = 2.0
+
+# 动态船是否遵守 COLREGs。它独立于智能体是否启用规则动作过滤。
+DYNAMIC_VESSEL_COLREGS = true
+
+[placement]
+
+# 布局模式：random 每次新随机种子；seeded_random 按 BASE_SEED+i；
+# fixed 使用下方 JSON；stress 从随机场景出发并提高主航路会遇机会。
+PLACEMENT_MODE = seeded_random
+
+# 随机场景生成失败后的最大重试次数。频繁失败应优先减小密度/间距。
+MAX_PLACEMENT_RETRIES = 50
+
+# 智能体和目标相对地图边界的额外生成留白。
+AGENT_TARGET_MARGIN_M = 20.0
+
+# 静态-静态、船-静态、船-船初始净间隙（均在双方半径之外）。
+STATIC_CLEARANCE_M = 20.0
+VESSEL_STATIC_CLEARANCE_M = 25.0
+VESSEL_VESSEL_CLEARANCE_M = 30.0
+
+# 静态/动态障碍物距地图边界的额外生成留白。
+STATIC_BOUNDARY_MARGIN_M = 10.0
+DYNAMIC_BOUNDARY_MARGIN_M = 15.0
+
+# fixed 模式的智能体：[position_m=[x,y], heading_deg, speed_mps]。
+FIXED_AGENT_JSON = [{"position_m":[-220.0,-80.0],"heading_deg":15.0,"speed_mps":0.0}]
+
+# fixed 模式的目标：static 目标应设 speed_mps=0。
+FIXED_TARGET_JSON = [{"position_m":[180.0,100.0],"heading_deg":0.0,"speed_mps":0.0}]
+
+# fixed 模式的动态船：额外填写 radius_m；航向 0 deg 指向 +x，90 deg 指向 +y。
+FIXED_DYNAMIC_JSON = [{"position_m":[-20.0,120.0],"heading_deg":-90.0,"speed_mps":1.2,"radius_m":12.0},{"position_m":[80.0,-130.0],"heading_deg":90.0,"speed_mps":1.6,"radius_m":15.0}]
+
+# fixed 模式的静态障碍物：[position_m=[x,y], radius_m]。
+FIXED_STATIC_JSON = [{"position_m":[-100.0,40.0],"radius_m":12.0},{"position_m":[40.0,40.0],"radius_m":15.0},{"position_m":[120.0,-50.0],"radius_m":10.0}]
+
+[disturbance]
+
+# 洋流模式：off 关闭；random 每回合随机流速/方向；fixed 使用下方固定值。
+CURRENT_MODE = random
+
+# random 洋流的最大流速，同时也是环境安全上限。
+MAX_CURRENT_SPEED_MPS = 0.10
+
+# fixed 洋流的速度与方向；0 deg 指向 +x，90 deg 指向 +y。
+FIXED_CURRENT_SPEED_MPS = 0.05
+FIXED_CURRENT_DIRECTION_DEG = 45.0
+
+# 目标观测模式。direct_noisy 直接给相对坐标并加入高斯噪声，是当前训练模式。
+TARGET_OBSERVATION_MODE = direct_noisy
+
+# direct_noisy 模式的目标 x/y 位置测量标准差。PN 默认也使用同一测量位置，
+# 避免 PN 偷看真值；静态目标速度会在 PN 内强制设为 0，避免差分放大该噪声。
+TARGET_POSITION_NOISE_STD_M = 1.0
+
+[dynamics]
+
+# true 表示完整沿用训练时的 1 s 环境步、0.1 s 3DOF 子步、执行器约束和动作
+# 平滑；false 才使用本段下方的动力学覆盖项。公平策略对比推荐 true。
+PRESERVE_TRAINING_DYNAMICS = true
+
+# 以下时间尺度在 PRESERVE_TRAINING_DYNAMICS=false 时覆盖训练参数；环境步长
+# 必须是 3DOF 子步长的整数倍。
+ENVIRONMENT_DT_S = 1.0
+USV_3DOF_DT_S = 0.1
+
+# 3DOF 状态速度上限：纵荡前进、倒车和横荡漂移速度。
+USV_MAX_SURGE_SPEED_MPS = 3.0
+USV_MAX_REVERSE_SPEED_MPS = 0.5
+USV_MAX_SWAY_SPEED_MPS = 1.0
+
+# 推力每秒最大变化量；越小加减速越平缓。
+USV_MAX_THRUST_RATE_NPS = 80.0
+
+# 最大舵角、舵角速率、艏摇角速度硬上限。PN 配置中的 PN_MAX_YAW_RATE_DEG_S
+# 必须不超过这里实际生效的 20 deg/s。
+USV_MAX_RUDDER_ANGLE_DEG = 25.0
+USV_MAX_RUDDER_RATE_DEG_S = 8.0
+USV_MAX_YAW_RATE_DEG_S = 20.0
+
+# 跨环境步动作指数平滑系数：applied=alpha*current+(1-alpha)*previous；
+# 越小越平滑但反应越慢，1 表示关闭额外平滑。
+ACTION_SMOOTHING_ALPHA = 0.35
+
+# 动态船最大转向率、随机航向扰动强度和最大线加速度。
+DYNAMIC_MAX_TURN_RATE_DEG_S = 8.0
+DYNAMIC_HEADING_NOISE_DEG_S = 2.0
+DYNAMIC_MAX_ACCEL_MPS2 = 0.20
+
+# 智能体动作执行前的额外几何安全缓冲。
+MOTION_EXECUTION_SAFETY_BUFFER_M = 5.0
+
+# COLREGs 的预测时间窗、最小 CPA、普通规则缓冲和紧急动作距离。
+COLREGS_RISK_TIME_HORIZON_S = 60.0
+COLREGS_MIN_CPA_DISTANCE_M = 30.0
+COLREGS_SAFETY_BUFFER_M = 10.0
+COLREGS_EMERGENCY_DISTANCE_M = 50.0
+
+# 动态实体的即时几何避障缓冲；第二项针对船-船紧急间隙。
+GEOMETRIC_AVOIDANCE_BUFFER_M = 20.0
+GEOMETRIC_VESSEL_BUFFER_M = 30.0
+
+# 预测避障时域及预测到船舶接近后的净安全缓冲。
+PREDICTIVE_HORIZON_S = 60.0
+PREDICTIVE_VESSEL_BUFFER_M = 30.0
+
+# 动态实体距边界小于该距离时开始向地图内部转向。
+BOUNDARY_TURN_MARGIN_M = 30.0
+
+# body-frame 观测的边界风险预警距离；仅输入给策略，不改变 done 边界。
+OBSERVATION_BOUNDARY_RISK_DISTANCE_M = 100.0
+
+[guidance]
+
+# PN 导引常数 N。常用范围约 3~5；越大越积极截获，但过大可能增大摆舵。
+PN_NAVIGATION_CONSTANT = 3.0
+
+# PN 生效的最大目标距离。600 m 地图中的任意两点距离小于约 849 m，因此 1000
+# 可覆盖整个测试图；大地图时应同步增大。
+PN_MAX_RANGE_M = 1000.0
+
+# a_n/V_g 的地速分母下限，避免低速或停船时数值发散。
+PN_MIN_SPEED_MPS = 0.30
+
+# 闭合速度低于该值时把纯 PN 法向加速度置 0，防止几何/测量微扰持续摆舵。
+PN_MIN_CLOSING_SPEED_MPS = 0.05
+
+# PN 法向加速度硬上限。越低越保守、轨迹更平滑；单位 m/s^2。
+PN_MAX_LATERAL_ACCEL_MPS2 = 0.60
+
+# PN 最终期望艏摇角速度上限。必须小于等于当前训练 3DOF 的 15 deg/s 硬上限。
+PN_MAX_YAW_RATE_DEG_S = 12.0
+
+# LOS 角速度一阶低通：filtered=alpha*previous+(1-alpha)*raw；alpha 越大越平滑。
+PN_LOS_RATE_FILTER_ALPHA = 0.80
+
+# 低于该 LOS 角速度死区时视为 0，抑制近直线追踪时的微小舵角抖动。
+PN_LOS_RATE_DEADBAND_DEG_S = 0.10
+
+# 艏摇角速度跟踪增益 K_r，单位 s：rudder_norm=sat(K_r*(r_des-r))。
+PN_YAW_RATE_TRACKING_GAIN = 4.0
+
+# 是否启用 LOS 航向捕获补偿。静止目标、初始速度为 0 时，严格纯 PN 的闭合速度
+# 为 0，无法自行起转；开启后仅提供进入有效追踪几何所需的受限转向先验。
+PN_HEADING_ASSIST_ENABLED = true
+
+# 航向捕获增益 k_psi，单位 1/s：r_acq=sat(k_psi*heading_error)。
+PN_HEADING_ASSIST_GAIN = 0.35
+
+# PN-only 的巡航速度、接近目标时最低速度，以及开始降速的距离。
+PN_CRUISE_SPEED_MPS = 2.0
+PN_MIN_APPROACH_SPEED_MPS = 0.70
+PN_SLOWDOWN_RANGE_M = 150.0
+
+# PN 速度保持器使用的目标半径。应与 TARGET_SUCCESS_RADIUS_M 保持一致。
+PN_GOAL_RADIUS_M = 100.0
+
+# 纵荡速度 P 控制增益，单位 N/(m/s)。PN 推力 = 阻尼前馈 + 本项速度误差补偿。
+PN_SPEED_CONTROL_GAIN = 25.0
+
+# 目标速度来源：finite_difference 相邻测量位置差分；measured_state 使用测量实体
+# 速度；world_oracle 只用于理想上界；zero 强制零速度。当前静止目标推荐差分。
+PN_TARGET_VELOCITY_SOURCE = finite_difference
+
+# static 目标下是否强制目标速度为 0，避免位置测量噪声经差分形成虚假机动。
+PN_STATIC_TARGET_ZERO_VELOCITY = true
+
+# 目标速度一阶低通系数和物理速度裁剪上限。
+PN_TARGET_VELOCITY_FILTER_ALPHA = 0.70
+PN_TARGET_SPEED_MAX_MPS = 3.0
+
+# SAC+PN 的融合系数 beta：rudder=(1-beta)*rudder_SAC+beta*rudder_PN。
+# 0 退化为 SAC；1 的舵角完全来自 PN。默认只融合舵角以保留 SAC 速度决策。
+PN_BLEND_WEIGHT = 0.35
+
+# true 时推力也按 beta 融合；false 时仅融合舵角，推荐 false 用于公平消融。
+PN_BLEND_THRUST = false
+
+# true 时 PN 使用与 SAC 同源的带噪目标测量坐标；false 时读取真实坐标，属于理想
+# 传感器上界，不宜与 SAC 进行严格公平对比。
+PN_USE_MEASURED_TARGET_POSITION = true
+
+[output]
+
+# 是否在 PNG/GIF 中显示静态障碍物的圆形碰撞边界。
+# false 时只隐藏显示，仿真中的碰撞判定与裁剪边界仍然有效。
+SHOW_COLLISION_BOUNDARY = true
+
+# 静态障碍物视觉分档比例：大岛（带绿洲）:中等沙岛:小型礁石。
+# 2:3:5 表示按当前障碍物尺寸从大到小分配约 20%/30%/50%。
+STATIC_OBSTACLE_VISUAL_RATIO = 2:3:5
+
+# 输出根目录。留空保存到 D:/USV/logs/<TRAINING_RUN_NAME>/evaluation/<TEST_NAME>/<时间戳>/；
+# 填写路径则保存到 <OUTPUT_ROOT>/<TEST_NAME>/<时间戳>/。
+OUTPUT_ROOT =
+
+# 是否保存每回合轨迹 PNG；图中保留实体圆形与轨迹长尾。
+SAVE_PNG = true
+
+# 是否保存 GIF。正式大量统计时可关闭以节省时间和磁盘空间。
+SAVE_GIF = true
+
+# 每隔多少个 episode 保存一次 GIF；1 表示每回合，10 表示第 1、11、21... 回合。
+SAVE_GIF_EVERY = 1
+
+# GIF 帧抽样步长与播放帧率；只影响文件体积和播放速度，不影响仿真。
+GIF_FRAME_STRIDE = 2
+GIF_FPS = 12
+
+# 是否保存实体轨迹 CSV、逐步动作/3DOF 状态/PN 诊断 CSV，以及逐回合和按变体
+# 汇总的 CSV。SAVE_EPISODE_SUMMARY_CSV=true 时同时写 variant_summary.csv。
+SAVE_TRAJECTORY_CSV = true
+SAVE_ACTION_STATE_CSV = true
+SAVE_EPISODE_SUMMARY_CSV = true
+
+# 是否保存最终生效环境配置、输入配置副本和 JSON manifest，建议保持 true。
+SAVE_EFFECTIVE_CONFIG = true
+SAVE_JSON_MANIFEST = true
+
+# 是否保存 COLREGs 影子审计的逐步日志、事件日志和 N 次测试汇总。该审计只读取
+# SAC 原始动作和环境状态，不干预 PN、规则过滤器、奖励或环境转移。
+SAVE_COLREGS_AUDIT = true
+
+[colregs_audit]
+
+# 仅审计动态障碍船与智能体的独立会遇事件；目标船是任务终点，不计入规则统计。
+# 本段只影响统计口径和可视化着色，不改变五组变体的候选动作或 3DOF 动力学。
+
+# 连续多少个时间步处于规则风险后，才创建一次独立会遇事件。
+ENTER_CONFIRM_STEPS = 2
+
+# 风险解除后连续多少个时间步才关闭事件，避免边界附近的判定抖动。
+EXIT_CONFIRM_STEPS = 3
+
+# 事件开始后，原始 SAC 动作首次符合规则的及时响应窗口（单位：环境步）。
+EARLY_ACTION_WINDOW_STEPS = 5
+
+# 事件级动作遵循判定允许的最大响应延迟（单位：环境步）。
+REACTION_DEADLINE_STEPS = 5
+
+# 事件中原始 SAC 动作被判定为遵规的比例下限。
+ACTION_COMPLIANCE_THRESHOLD = 0.70
+
+# 事件中明显反规则动作所占的最大允许比例。
+ANTI_RULE_ACTION_THRESHOLD = 0.20
+
+# 0 表示只使用规则风险报告与退出确认步数完成事件滞回。
+EVENT_EXIT_DISTANCE_M = 0.0
+
+# 0 表示沿用环境 COLREGs 过滤器中的直航船紧急距离。
+STAND_ON_EMERGENCY_DISTANCE_M = 0.0
+
+# 事件安全化解要求的最小船体净空，单位 m。
+SAFE_CLEARANCE_M = 10.0
+
+# 风险解除时要求的最小 DCPA，单位 m。
+SAFE_DCPA_M = 30.0
+
+# 风险解除尾部允许的最大 TCPA，单位 s。
+RESOLUTION_TCPA_MAX_S = 0.0

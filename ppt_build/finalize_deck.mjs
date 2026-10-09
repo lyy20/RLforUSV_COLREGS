@@ -1,0 +1,14 @@
+import path from 'node:path';
+import { pathToFileURL } from 'node:url';
+import fs from 'node:fs/promises';
+const { finalizePresentation } = await import(pathToFileURL('C:/Users/Administrator/.codex/plugins/cache/openai-primary-runtime/presentations/26.909.22227/skills/presentations/container_tools/artifact_tool_utils.mjs').href);
+const workspaceDir='C:/Users/Administrator/Documents/Codex/2026-07-13/gai/USV_CISF_SAC_729_3DOF_BODY_FRAME';
+const skillDir='C:/Users/Administrator/.codex/plugins/cache/openai-primary-runtime/presentations/26.909.22227/skills/presentations';
+const stagingDir=path.join(workspaceDir,'.codex-finalizer');
+const finalPath=path.join(workspaceDir,'ppt_output','maritime_rule_internalization_20260914.pptx');
+const candidatePath=path.join(stagingDir,'candidate.pptx');
+await fs.mkdir(stagingDir,{recursive:true});
+await fs.mkdir(path.dirname(finalPath),{recursive:true});
+await fs.copyFile(path.join(workspaceDir,'ppt_build','candidate.pptx'),candidatePath);
+await finalizePresentation({workspaceDir,candidatePath,finalPath,explicitTotalSlideCount:15,requiredNativeTableOwnerSlides:[],requiredNativeChartOwnerSlides:[],fontPolicy:{basis:'design',families:['Arial','Microsoft YaHei']},expectedSlideSizeEmu:'15240000,8572500',pythonExecutable:'C:/Users/Administrator/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/python.exe',integrityValidatorPath:path.join(skillDir,'container_tools/inspect_presentation_package_integrity.py'),layoutValidatorPath:path.join(skillDir,'container_tools/inspect_presentation_layout_geometry.py'),layoutArgs:['--expected-slide-size-emu','15240000,8572500','--validate-heading-fit'],verifyArtifactToolImport:true,receiptPath:path.join(stagingDir,'maritime_rule_internalization_20260914.pptx.validation.json')});
+console.log(finalPath);

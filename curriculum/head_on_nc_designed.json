@@ -1,0 +1,140 @@
+{
+ "summary": {
+  "encounter_designed": "head_on",
+  "peer": "obstacle 0",
+  "window_steps": 159,
+  "dcpa_at_start_m": 3.0,
+  "tcpa_at_start_s": 71.4,
+  "min_distance_m": 120.3,
+  "min_clearance_m": 98.3,
+  "risk_tripwire_fired": 0,
+  "risk_steps": 0,
+  "audit_action_compliant_steps": 159,
+  "designed_first_compliance_step": 5,
+  "designed_compliance_ratio": 0.428,
+  "anti_rule_ratio": 0.22,
+  "peak_starboard_rudder": -0.217,
+  "peak_port_rudder": 0.107,
+  "net_heading_change_deg": 35.5,
+  "verdict": "BLIND_SPOT_NO_RISK_EVENT"
+ },
+ "trace": [
+  {
+   "step": 1,
+   "distance_m": 200.0,
+   "rudder": 0.103,
+   "dir": "port",
+   "heading_deg": 0.8,
+   "compliant": false,
+   "anti": false
+  },
+  {
+   "step": 7,
+   "distance_m": 182.4,
+   "rudder": -0.143,
+   "dir": "starboard",
+   "heading_deg": -37.9,
+   "compliant": true,
+   "anti": false
+  },
+  {
+   "step": 14,
+   "distance_m": 164.8,
+   "rudder": -0.003,
+   "dir": "port",
+   "heading_deg": -62.1,
+   "compliant": true,
+   "anti": false
+  },
+  {
+   "step": 20,
+   "distance_m": 156.8,
+   "rudder": 0.067,
+   "dir": "port",
+   "heading_deg": -44.7,
+   "compliant": true,
+   "anti": false
+  },
+  {
+   "step": 27,
+   "distance_m": 148.4,
+   "rudder": 0.048,
+   "dir": "port",
+   "heading_deg": -30.5,
+   "compliant": true,
+   "anti": false
+  },
+  {
+   "step": 33,
+   "distance_m": 142.4,
+   "rudder": 0.023,
+   "dir": "port",
+   "heading_deg": -15.1,
+   "compliant": true,
+   "anti": false
+  },
+  {
+   "step": 40,
+   "distance_m": 134.9,
+   "rudder": 0.0,
+   "dir": "port",
+   "heading_deg": -8.1,
+   "compliant": false,
+   "anti": false
+  },
+  {
+   "step": 46,
+   "distance_m": 129.6,
+   "rudder": 0.009,
+   "dir": "port",
+   "heading_deg": -6.2,
+   "compliant": false,
+   "anti": false
+  },
+  {
+   "step": 53,
+   "distance_m": 125.6,
+   "rudder": 0.01,
+   "dir": "port",
+   "heading_deg": 1.0,
+   "compliant": false,
+   "anti": false
+  },
+  {
+   "step": 59,
+   "distance_m": 123.3,
+   "rudder": 0.007,
+   "dir": "port",
+   "heading_deg": 7.3,
+   "compliant": false,
+   "anti": false
+  },
+  {
+   "step": 66,
+   "distance_m": 121.6,
+   "rudder": 0.021,
+   "dir": "port",
+   "heading_deg": 15.8,
+   "compliant": false,
+   "anti": true
+  },
+  {
+   "step": 72,
+   "distance_m": 120.8,
+   "rudder": 0.02,
+   "dir": "port",
+   "heading_deg": 27.7,
+   "compliant": false,
+   "anti": true
+  },
+  {
+   "step": 79,
+   "distance_m": 120.3,
+   "rudder": 0.007,
+   "dir": "port",
+   "heading_deg": 35.7,
+   "compliant": false,
+   "anti": true
+  }
+ ]
+}

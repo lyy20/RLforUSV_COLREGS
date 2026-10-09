@@ -1,0 +1,48 @@
+{"kind":"deck","id":"pr/tgfw0x","name":"Deck"}
+{"kind":"layout","layoutId":"954900fb-30b7-4885-8199-b5f67d7dad92","name":"Master","type":"master"}
+{"kind":"layout","layoutId":"9b24c91e-1052-46ba-8848-5881ac0ac359","name":"Title Slide","type":"title"}
+{"kind":"slide","id":"sl/p4fima","slide":1,"title":"Slide 1","textShapes":0}
+{"kind":"image","id":"im/m5w3a54v","slide":1,"name":"","alt":"海事规则内化流程与关键模块","bbox":[0,0,1600,900]}
+{"kind":"notes","id":"nt/p4fima","slide":1,"text":"来源：项目源码、README、配置文件与 0911 评估 CSV。"}
+{"kind":"slide","id":"sl/cvkvsy","slide":2,"title":"Slide 2","textShapes":0}
+{"kind":"image","id":"im/3u5836t8","slide":2,"name":"","alt":"研究背景与任务定义","bbox":[0,0,1600,900]}
+{"kind":"notes","id":"nt/cvkvsy","slide":2,"text":"来源：项目源码、README、配置文件与 0911 评估 CSV。"}
+{"kind":"slide","id":"sl/po36lq","slide":3,"title":"Slide 3","textShapes":0}
+{"kind":"image","id":"im/axo36dgf","slide":3,"name":"","alt":"规则内化要解决的问题","bbox":[0,0,1600,900]}
+{"kind":"notes","id":"nt/po36lq","slide":3,"text":"来源：项目源码、README、配置文件与 0911 评估 CSV。"}
+{"kind":"slide","id":"sl/o572tz","slide":4,"title":"Slide 4","textShapes":0}
+{"kind":"image","id":"im/ipsfq1kr","slide":4,"name":"","alt":"海事规则内化总流程","bbox":[0,0,1600,900]}
+{"kind":"notes","id":"nt/o572tz","slide":4,"text":"来源：项目源码、README、配置文件与 0911 评估 CSV。"}
+{"kind":"slide","id":"sl/930b7l","slide":5,"title":"Slide 5","textShapes":0}
+{"kind":"image","id":"im/sjmt076x","slide":5,"name":"","alt":"规则过滤器：构成方式","bbox":[0,0,1600,900]}
+{"kind":"notes","id":"nt/930b7l","slide":5,"text":"来源：项目源码、README、配置文件与 0911 评估 CSV。"}
+{"kind":"slide","id":"sl/r2zagn","slide":6,"title":"Slide 6","textShapes":0}
+{"kind":"image","id":"im/jix4v65c","slide":6,"name":"","alt":"规则过滤器：具体作用","bbox":[0,0,1600,900]}
+{"kind":"notes","id":"nt/r2zagn","slide":6,"text":"来源：项目源码、README、配置文件与 0911 评估 CSV。"}
+{"kind":"slide","id":"sl/roukb7","slide":7,"title":"Slide 7","textShapes":0}
+{"kind":"image","id":"im/ny14nmlw","slide":7,"name":"","alt":"规则状态器：滞回与义务锁存","bbox":[0,0,1600,900]}
+{"kind":"notes","id":"nt/roukb7","slide":7,"text":"来源：项目源码、README、配置文件与 0911 评估 CSV。"}
+{"kind":"slide","id":"sl/v9bf4a","slide":8,"title":"Slide 8","textShapes":0}
+{"kind":"image","id":"im/507qhwzq","slide":8,"name":"","alt":"规则教师数据：动作链与记录字段","bbox":[0,0,1600,900]}
+{"kind":"notes","id":"nt/v9bf4a","slide":8,"text":"来源：项目源码、README、配置文件与 0911 评估 CSV。"}
+{"kind":"slide","id":"sl/js4gb9","slide":9,"title":"Slide 9","textShapes":0}
+{"kind":"image","id":"im/ux032tgn","slide":9,"name":"","alt":"双批次经验池：构成方式","bbox":[0,0,1600,900]}
+{"kind":"notes","id":"nt/js4gb9","slide":9,"text":"来源：项目源码、README、配置文件与 0911 评估 CSV。"}
+{"kind":"slide","id":"sl/53wrl2","slide":10,"title":"Slide 10","textShapes":0}
+{"kind":"image","id":"im/itcf2pwf","slide":10,"name":"","alt":"模仿学习损失：构成与作用","bbox":[0,0,1600,900]}
+{"kind":"notes","id":"nt/53wrl2","slide":10,"text":"来源：项目源码、README、配置文件与 0911 评估 CSV。"}
+{"kind":"slide","id":"sl/uwb6a7","slide":11,"title":"Slide 11","textShapes":0}
+{"kind":"image","id":"im/vatcn6hs","slide":11,"name":"","alt":"训练时序与开关逻辑","bbox":[0,0,1600,900]}
+{"kind":"notes","id":"nt/uwb6a7","slide":11,"text":"来源：项目源码、README、配置文件与 0911 评估 CSV。"}
+{"kind":"slide","id":"sl/qzd1c1","slide":12,"title":"Slide 12","textShapes":0}
+{"kind":"image","id":"im/7qpkrixk","slide":12,"name":"","alt":"评估：如何判断“内化”","bbox":[0,0,1600,900]}
+{"kind":"notes","id":"nt/qzd1c1","slide":12,"text":"来源：项目源码、README、配置文件与 0911 评估 CSV。"}
+{"kind":"slide","id":"sl/olqx3z","slide":13,"title":"Slide 13","textShapes":0}
+{"kind":"image","id":"im/a987mt0z","slide":13,"name":"","alt":"项目评估记录：过滤器开关对照","bbox":[0,0,1600,900]}
+{"kind":"notes","id":"nt/olqx3z","slide":13,"text":"来源：项目源码、README、配置文件与 0911 评估 CSV。"}
+{"kind":"slide","id":"sl/t1eitn","slide":14,"title":"Slide 14","textShapes":0}
+{"kind":"image","id":"im/m5ovilcj","slide":14,"name":"","alt":"方法贡献与已知边界","bbox":[0,0,1600,900]}
+{"kind":"notes","id":"nt/t1eitn","slide":14,"text":"来源：项目源码、README、配置文件与 0911 评估 CSV。"}
+{"kind":"slide","id":"sl/puhyk7","slide":15,"title":"Slide 15","textShapes":0}
+{"kind":"image","id":"im/h4z6dk32","slide":15,"name":"","alt":"结论与展望","bbox":[0,0,1600,900]}
+{"kind":"notes","id":"nt/puhyk7","slide":15,"text":"来源：项目源码、README、配置文件与 0911 评估 CSV。"}

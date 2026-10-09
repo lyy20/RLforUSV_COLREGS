@@ -1,0 +1,146 @@
+[hyperparam]
+
+# CTIP + PER 的短端到端验证；只验证更新链，不作为正式实验配置。
+TRAINING_RUN_NAME = SAC_3DOF_BODY_FRAME_CTIP_SMOKE
+SCENARIO_PROFILE = SMALL_STATIC_TARGET_1S_500M_BODY_FRAME_SMOKE
+OBSERVATION_LAYOUT = 3dof_body_frame_v2_action_state
+CURRICULUM_STAGE = 1
+SCENARIO = usv_tracking_base
+control_model = usv_3dof
+
+BUFFER_SIZE = 128
+BATCH_SIZE = 8
+RESUME_OVERRIDE_BATCH_SIZE = True
+GAMMA = 0.995
+TAU = 0.005
+LR_ACTOR = 3e-4
+LR_CRITIC = 3e-4
+LR_ALPHA = 3e-4
+WEIGHT_DECAY = 0
+UPDATE_EVERY = 1
+UPDATE_TIMES = 1
+SEED = 13
+number_of_episodes = 16
+episode_length = 8
+noise = 1.0
+noise_reduction = 1.0
+PRE_TRAINED = False
+EXP_REP_BUF = True
+START_STEPS = 0
+START_POLICY = random
+
+parallel_envs = 2
+num_agents = 1
+num_landmarks = 1
+num_obstacles = 2
+num_static_obstacles = 3
+map_half_size = 0.300
+ob_range = 0.200
+num_ob = 2
+num_static_ob_slots = 1
+
+landmark_movable = False
+movement = static
+landmark_vel = 0.0000
+max_vel = 0.0000
+obstacle_movable = True
+obstacle_movement = linear
+random_vel = False
+dynamic_obstacle_min_speed = 0.001
+dynamic_obstacle_max_speed = 0.002
+landmark_depth = 0.0000
+
+pre_method = DIRECT
+target_observation_mode = direct_noisy
+target_position_noise_std = 0.001
+range_dropping = 0.0
+max_range = 0.200
+max_current_vel = 0.0001
+rew_err_th = 0.010
+rew_dis_th = 0.100
+
+agent_radius = 0.010
+target_radius = 0.010
+dynamic_obstacle_min_size = 0.010
+dynamic_obstacle_max_size = 0.020
+static_obstacle_min_size = 0.010
+static_obstacle_max_size = 0.020
+agent_target_spawn_margin = 0.020
+static_obstacle_clearance = 0.020
+vessel_static_clearance = 0.025
+vessel_vessel_spawn_clearance = 0.030
+static_obstacle_spawn_margin = 0.010
+dynamic_obstacle_spawn_margin = 0.015
+
+environment_dt = 1.0
+usv_3dof_dt = 0.1
+usv_max_surge_speed = 3.0
+usv_max_reverse_speed = 0.5
+usv_max_sway_speed = 1.0
+usv_max_thrust_rate = 80.0
+usv_max_rudder_angle_deg = 25.0
+usv_max_rudder_rate_deg_s = 8.0
+usv_max_yaw_rate_deg_s = 20.0
+action_smoothing_alpha = 0.35
+scripted_action_is_velocity = True
+motion_execution_safety_buffer = 0.005
+observation_velocity_scale = 0.005
+observation_boundary_risk_distance = 0.100
+timeout_termination_enabled = True
+
+colregs_risk_time_horizon = 60.0
+colregs_min_cpa_distance = 0.030
+colregs_safety_buffer = 0.010
+colregs_emergency_distance = 0.050
+geometric_avoidance_buffer = 0.020
+geometric_vessel_emergency_buffer = 0.030
+predictive_avoidance_time_horizon = 60.0
+predictive_vessel_buffer = 0.030
+boundary_turn_margin = 0.030
+dynamic_obstacle_max_turn_rate_deg_s = 8.0
+dynamic_obstacle_heading_noise_deg_s = 2.0
+dynamic_obstacle_max_accel_mps2 = 0.2
+
+REWARD_SUCCESS = 100.0
+REWARD_COLLISION = 150.0
+REWARD_OUT_OF_BOUNDS = 150.0
+REWARD_TIMEOUT = 25.0
+REWARD_PROGRESS_WEIGHT = 18.0
+REWARD_RANGE_WEIGHT = 0.05
+REWARD_SAFETY_WEIGHT = 10.0
+REWARD_BOUNDARY_WEIGHT = 8.0
+REWARD_ACTION_SMOOTH_WEIGHT = 0.05
+REWARD_YAW_RATE_WEIGHT = 0.05
+REWARD_RUDDER_SMOOTH_WEIGHT = 0.10
+REWARD_INTERVENTION_ACTIVE_PENALTY = 0.02
+REWARD_INTERVENTION_MAGNITUDE_WEIGHT = 0.10
+REWARD_TIME_PENALTY = 0.05
+REWARD_SAFE_CLEARANCE = 0.030
+REWARD_BOUNDARY_SAFE_DISTANCE = 0.030
+
+DNN = MASAC
+ALPHA = 0.05
+AUTOMATIC_ENTROPY = True
+RNN = False
+HISTORY_LENGTH = 5
+DIM_1 = 128
+DIM_2 = 128
+ENTITY_ENCODER_ENABLED = False
+ENTITY_ENCODER_LATENT_DIM = 32
+ICM = False
+ICM_GAMMA = 0.5
+CTIP_active = True
+
+BENCHMARK = True
+RENDER = False
+PROGRESS_BAR = False
+REWARD_WINDOWS = 8
+LANDMARK_ERROR_WINDOWS = 8
+COLLISION_OUTWORLD_WINDOWS = 8
+DEVICE = cpu
+PROFILE_TRAINING = True
+TENSORBOARD_MAX_QUEUE = 100
+TENSORBOARD_FLUSH_SECS = 30
+POLICY_SAVE_INTERVAL = 8
+TENSORBOARD_LOG_INTERVAL = 4
+RULE_BUFFER_ENABLED = False

@@ -1,0 +1,209 @@
+[hyperparam]
+
+##################################################################
+# HYPERPARAMETERS
+##################################################################
+#Replay buffer size: int(1e6) 
+BUFFER_SIZE = 1000000
+#Mini batch size: 512  
+BATCH_SIZE = 64
+#Discount factor: 0.95            
+GAMMA = 0.99
+#Soft update of target parameters
+TAU = 0.005
+#Learning rate of the actor
+LR_ACTOR = 3e-4
+#Learning rate of the critic
+LR_CRITIC = 3e-4
+#Learning rate of the automatic entropy temperature
+LR_ALPHA = 3e-4
+#L2 weight decay: 1e-5     
+WEIGHT_DECAY = 0
+
+#How many episodes to take before updating the networks
+#The current training loop performs updates at episode level.
+UPDATE_EVERY = 1
+#Number of gradient updates performed at each update point
+UPDATE_TIMES = 5
+#Seed for random numbers       
+SEED = 1
+#Number of training episodes
+number_of_episodes = 1000000
+episode_length = 300
+
+#The clean SAC policy already samples from its squashed Gaussian policy.
+#These values keep the legacy external-noise switch from suppressing sampling.
+noise = 1.0
+noise_reduction = 1.0
+
+#REWARD FUNCTION THRESHOLDS
+rew_err_th = 0.03
+rew_dis_th = 0.3
+
+#Experienced replay buffer activation
+EXP_REP_BUF = False
+
+#Uniform random steps at the beginning. START_STEPS is interpreted as episodes
+#by the current training loop, so keep it disabled for this baseline.
+START_STEPS = 0
+#START_POLICY = AStar
+START_POLICY = random
+##################################################################
+# PRETRINED NETWORK
+##################################################################
+#Use a previously trained network as weights' imput    
+PRE_TRAINED = False
+PRE_TRAINED_EP = 0.5
+
+
+##################################################################
+# SCENARIO
+##################################################################
+#Scenario used to train the networks
+SCENARIO = usv_tracking_base
+#Control model: heading_rate or usv_3dof
+control_model = usv_3dof
+
+#Number of parallel environments
+parallel_envs = 8
+#Number of agents per environment
+num_agents = 1
+#Number of landmarks (or targets) per environment
+num_landmarks = 1
+#Number of obstacles per environment
+num_obstacles = 5
+#Number of static point obstacles per environment
+num_static_obstacles = 8
+#Square map boundary: x,y in [-map_half_size, map_half_size] km
+map_half_size = 2.0
+#Static point obstacle radius range in km
+static_obstacle_min_size = 0.04
+static_obstacle_max_size = 0.10
+#range of obstacle observation in km
+ob_range = 0.8
+#num of dynamic-vessel observation slots per agent
+num_ob = 3
+#num of static-obstacle observation slots per agent
+num_static_ob_slots = 1
+#TARGET PARAMETERS
+# Default task: single USV pursues an escaping target while avoiding moving obstacles.
+landmark_movable = True
+#movement = linear
+#movement = levy
+#movement = random
+#movement = escape
+# Curriculum stage 1: static target, learn safe approach before escape pursuit.
+movement = static
+obstacle_movable = True
+obstacle_movement = linear
+#obstacle_movement = levy
+#obstacle_movement = random
+random_vel = False
+#velocities in km/s
+landmark_vel = 0.0003
+max_vel = 0.0003
+
+#Depth of each landmark (in metres). It will be a random depth between 15m and landmark_depth.
+landmark_depth = 0.
+
+#TARGET ESTIMATION METHOD (LS by default if not PF)
+#pre_method = PF
+#pre_method = LS
+pre_method = DIRECT
+# Direct noisy target observation bypasses legacy LS/KM/PF during current training.
+target_observation_mode = direct_noisy
+target_position_noise_std = 0.005
+#ENVIRONMENT PARAMETERS
+#range dropping (to simulate missing communications between agents and landmarks)
+range_dropping = 0.01
+#maximum range at a distance measurement can be conducted
+max_range = 2.0
+#sea current velocity (0.001 km/s is the velocity of the agent)
+#velocities in km/s
+max_current_vel = 0.0003
+
+##################################################################
+# NETWORK ARCHITECTURE
+##################################################################
+#DNN network
+# The clean project keeps MASAC as the only training algorithm.
+DNN = MASAC
+
+#SAC parameters
+# SAC-only baseline: CTIP and PER are disabled below. COLREGs action filtering
+# remains enabled because this project evaluates a safety-constrained SAC policy.
+ALPHA = 0.05
+AUTOMATIC_ENTROPY = True
+
+#Recurrent neural network
+RNN = False
+HISTORY_LENGTH = 5
+
+#PPO 
+ICM = False
+ICM_GAMMA = 0.5
+PPO_method = Clip
+#PPO_method = Penalty
+
+#PPO clip_epsilon
+CLIP_EPISILON = 0.2
+
+#Number of units per layers
+#it was 64 or 128
+DIM_1 = 128 
+#it was 32 or 128
+DIM_2 = 128
+
+# CTIP
+CTIP_active = False
+
+##################################################################
+# LOG PARAMETERS
+##################################################################
+#Sliding windows to measure the avarage reward among epochs
+REWARD_WINDOWS = 10000
+#Sliding windows to measure the avarage landmark error among epochs 
+LANDMARK_ERROR_WINDOWS = 10000 
+#Sliding windows to emasure the number of collisions and out of world
+COLLISION_OUTWORLD_WINDOWS = 10000
+
+#In BSC machines the render doesn't work
+RENDER = False
+
+#If we want to render the progress bar         
+PROGRESS_BAR = True
+
+#Save benchmark data                
+BENCHMARK = True
+
+# How many episodes between policy/checkpoint saves.
+POLICY_SAVE_INTERVAL = 10000
+
+# How many episodes between TensorBoard metric writes.
+TENSORBOARD_LOG_INTERVAL = 100
+
+# TensorBoard event writer queue size and background flush interval.
+TENSORBOARD_MAX_QUEUE = 100
+TENSORBOARD_FLUSH_SECS = 30
+
+# Training device: auto / cpu / cuda / cuda:0
+DEVICE = auto
+
+# Lightweight timing profiler for TensorBoard performance/... metrics.
+PROFILE_TRAINING = True
+
+# 奖励配置：保持当前训练的默认奖励语义，可在此处直接调整各项权重。
+REWARD_SUCCESS = 100.0
+REWARD_COLLISION = 120.0
+REWARD_OUT_OF_BOUNDS = 100.0
+REWARD_PROGRESS_WEIGHT = 12.0
+REWARD_RANGE_WEIGHT = 0.5
+REWARD_SAFETY_WEIGHT = 20.0
+REWARD_BOUNDARY_WEIGHT = 8.0
+REWARD_ACTION_SMOOTH_WEIGHT = 0.02
+REWARD_INTERVENTION_ACTIVE_PENALTY = 0.05
+REWARD_INTERVENTION_MAGNITUDE_WEIGHT = 0.25
+REWARD_TIME_PENALTY = 0.05
+REWARD_SAFE_CLEARANCE = 0.15
+REWARD_BOUNDARY_SAFE_DISTANCE = 0.25
+##################################################################

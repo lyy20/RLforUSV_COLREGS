@@ -1,0 +1,367 @@
+# =============================================================================
+# USV 自定义策略测试配置模板
+# =============================================================================
+# 使用方法（在项目根目录运行）：
+#   python see_trained_custom.py CUSTOM_EVALUATION_TEMPLATE.txt
+#
+# 临时覆盖示例（只影响本次运行，不改写本文件）：
+#   python see_trained_custom.py CUSTOM_EVALUATION_TEMPLATE.txt --episodes 3 --max-steps 100
+#   python see_trained_custom.py CUSTOM_EVALUATION_TEMPLATE.txt --agent-rule-mode policy_only --no-gif
+#
+# 单位约定：
+#   位置、半径、间距、感知距离统一填写 m；速度填写 m/s；
+#   时间填写 s；角度填写 deg；角速度填写 deg/s。
+#   脚本会在内部转换为当前环境使用的 km、km/s 和 rad。
+#
+# 最重要的使用原则：
+#   1. [policy] 只负责找到训练配置和断点，并按训练参数重建神经网络。
+#   2. 其余段落负责定义测试环境，可以改变地图、实体数量和物理分布。
+#   3. 动态/静态“观测槽数量”属于网络结构，不在本文件中修改。
+#      例如训练时动态槽为 2，而测试时放入 5 艘动态船，策略仍只观察最近 2 艘；
+#      这属于合法的泛化测试，不会改变网络输入维度。
+#   4. NUM_AGENTS 与 NUM_TARGETS 当前也属于网络契约，必须与训练配置相同。
+
+[policy]
+
+# 训练参数文件名或完整路径。该文件用于恢复网络层数、隐藏层维度、实体编码器、
+# RNN、观测槽数量、动作维度等，不能用自定义测试参数代替。
+TRAINING_CONFIG = SAC_3DOF_ENTITY_ENCODER_0816.txt
+
+# 已完成训练的实验目录名，必须与上面训练配置中的 TRAINING_RUN_NAME 完全一致。
+# 默认模型目录由它解析为 D:/USV/logs/<TRAINING_RUN_NAME>/model_dir。
+TRAINING_RUN_NAME = SAC_3DOF_BODY_FRAME_ENTITY_ENCODER_STAGE_1
+
+# 断点选择：
+#   last：读取 episode_last.pt，表示训练保存的最后策略；
+#   best：读取 episode_best.pt，表示训练流程记录的最优策略。
+CHECKPOINT = last
+
+# 模型目录覆盖项。留空时使用 D:/USV/logs/<TRAINING_RUN_NAME>/model_dir。
+# 只有断点位于其他目录时才填写，例如 D:/backup/SAC_0812_1/model_dir。
+MODEL_DIR =
+
+# 推理设备：
+#   auto：CUDA 可用时使用 GPU，否则使用 CPU；
+#   cpu：强制 CPU，兼容性最好；
+#   cuda：强制 GPU，若当前 PyTorch 无 CUDA 支持则直接报错。
+DEVICE = auto
+
+[evaluation]
+
+# 本次测试名称，只能是单个目录名，不能包含斜杠。输出会按该名称单独归档。
+TEST_NAME = CUSTOM_TEST_0816
+
+# 智能体动作规则模式：
+#   policy_only：关闭智能体 COLREGs 安全动作过滤器，只执行策略网络动作；
+#                用于判断策略是否已经独立学会避碰与规则行为。
+#   assisted：保持训练阶段流程，允许 COLREGs 过滤器替换高风险动作；
+#             用于检查“策略 + 安全层”整个系统的最终安全性能。
+#   both：每个种子分别执行 policy_only 和 assisted，两次使用相同的随机种子；
+#         适合直接对比安全层带来的收益及策略对安全层的依赖程度。
+AGENT_RULE_MODE = policy_only 
+
+# 独立测试回合数。正式统计建议至少 100，调试配置和场景时可以先设为 1~5。
+EPISODES = 10
+
+# 每回合最大环境步数。达到该值时由环境产生 timeout（需训练环境支持超时终止）。
+# 当前 1 s/step 的场景填 200，表示每回合最多仿真 200 s。
+MAX_STEPS = 400
+
+# 基础随机种子。seeded_random、fixed、stress 模式下，第 i 回合使用 BASE_SEED+i。
+# both 模式下两种规则流程使用同一个回合种子，以获得可比的初始场景。
+BASE_SEED = 1
+
+[scene]
+
+# 场景脚本名，不含 .py。当前项目的正式追踪场景使用 usv_tracking_base。
+SCENARIO = usv_tracking_base
+
+# 地图边长，当前场景只支持正方形。600 表示 x/y 均为 [-300 m, 300 m]。
+MAP_SIZE_M = 1000.0
+
+# 智能体数量。当前模型通常为 1，必须与训练配置的 num_agents 一致。
+NUM_AGENTS = 1
+
+# 真实目标数量。当前模型通常为 1，必须与训练配置的 num_landmarks 一致。
+NUM_TARGETS = 1
+
+# 测试场景实际生成的动态障碍船数量，可以大于或小于训练数量。
+# 超过训练动态观测槽时，策略每步只接收距离最近的若干艘，其余船仍在环境中运动。
+NUM_DYNAMIC_OBSTACLES = 6
+
+# 测试场景实际生成的静态障碍物数量，可以大于或小于训练数量。
+# 超过训练静态观测槽时，策略每步只接收距离最近的若干个。
+NUM_STATIC_OBSTACLES = 8
+
+# 障碍物传感器有效半径。仅决定动态/静态障碍物何时进入槽，不限制目标位置观测。
+OBSERVATION_RANGE_M = 200.0
+
+# 成功判定半径：智能体与目标中心距离首次小于该值时立即完成回合。
+# 该参数会覆盖环境的 rew_dis_th，但不会改变训练奖励权重。
+TARGET_SUCCESS_RADIUS_M = 100.0
+
+[entities]
+
+# 智能体等效碰撞圆半径。固定布局 JSON 中不需要重复填写智能体半径。
+AGENT_RADIUS_M = 10.0
+
+# 目标船等效碰撞圆半径。固定布局 JSON 中不需要重复填写目标半径。
+TARGET_RADIUS_M = 10.0
+
+# 动态障碍船随机半径下限和上限。random/seeded_random/stress 模式从区间采样。
+# fixed 模式以 FIXED_DYNAMIC_JSON 中每艘船的 radius_m 为准。
+DYNAMIC_RADIUS_MIN_M = 10.0
+DYNAMIC_RADIUS_MAX_M = 20.0
+
+# 静态障碍物随机半径下限和上限。fixed 模式以 FIXED_STATIC_JSON 为准。
+STATIC_RADIUS_MIN_M = 10.0
+STATIC_RADIUS_MAX_M = 20.0
+
+[movement]
+
+# 目标是否具备运动能力。static 模式下即使这里为 true，场景也会强制目标静止；
+# 其他运动模式必须设为 true，目标才会执行脚本运动。
+TARGET_MOVABLE = false
+
+# 目标运动模式：
+#   static：完全静止；
+#   escape：在限速、限转向和避障前提下倾向远离智能体；
+#   linear：大致保持直线并叠加小幅航向扰动；
+#   random：使用随机二维运动命令，变化较强，主要用于鲁棒性压力测试；
+#   levy：使用 Levy 随机游走，偶尔产生较长位移趋势，分布更不规则。
+TARGET_MOVEMENT = static
+
+# 目标标称速度和正常速度上限，单位为 m/s。static 模式下目标仍保持静止；
+# 切换到其他模式时，TARGET_SPEED_MPS 作为兼容性的标称速度，实际速度受下方
+# TARGET_MIN_SPEED_MPS 和 TARGET_MAX_SPEED_MPS 共同约束。
+TARGET_SPEED_MPS = 1.4
+TARGET_MAX_SPEED_MPS = 2.0
+# 目标正常航行速度下限，单位为 m/s。它不是紧急避碰时的绝对下限；
+# 发生规则紧急动作或近距离避障时，目标可以临时减速到更低速度。
+TARGET_MIN_SPEED_MPS = 0.8
+# 目标初始实际速度，单位为 m/s，必须位于目标速度上下限之间。
+TARGET_INITIAL_SPEED_MPS = 1.4
+# 目标最大加速度，单位为 m/s^2，用于限制加速过程，避免瞬时提速。
+TARGET_MAX_ACCEL_MPS2 = 0.15
+# 目标最大减速度，单位为 m/s^2，用于限制减速过程，避免瞬时降速。
+TARGET_MAX_DECEL_MPS2 = 0.20
+# 目标最大航向变化率，单位为 deg/s，用于限制每个环境步的转向幅度。
+TARGET_MAX_TURN_RATE_DEG_S = 4.0
+# linear/random/levy 模式的航向扰动强度，单位为 deg/s；仍受最大转向率限制。
+TARGET_HEADING_NOISE_DEG_S = 1.0
+# 目标速度意图的最短更新间隔，单位为 s；间隔内只执行平滑速度变化。
+TARGET_SPEED_CHANGE_INTERVAL_MIN_S = 3.0
+# 目标速度意图的最长更新间隔，单位为 s；每次更新可能加速、减速或保持。
+TARGET_SPEED_CHANGE_INTERVAL_MAX_S = 8.0
+# 每次速度意图变化的最大步进，单位为 m/s；实际变化仍受加减速度限制。
+TARGET_SPEED_STEP_MPS = 0.20
+# 紧急避碰时允许降到的最低速度，单位为 m/s；0 表示必要时允许停船。
+TARGET_EMERGENCY_STOP_SPEED_MPS = 0.0
+# 是否让目标参与 COLREGs 规则判断，覆盖目标与智能体、动态障碍船之间的会遇。
+TARGET_COLREGS_ENABLED = true
+# 是否启用目标面向动态船的 TCPA/DCPA 预测性避碰；静态障碍物始终使用几何避障。
+TARGET_PREDICTIVE_AVOIDANCE_ENABLED = true
+
+# 动态障碍船是否运动。false 用于把动态船退化为具有船舶类型标记的静态实体。
+DYNAMIC_MOVABLE = true
+
+# 动态船运动模式：
+#   linear：保持惯性航向，并受 COLREGs、几何避障和边界逻辑修正，推荐正式测试；
+#   random：每步随机改变运动命令，难度高但物理连续性较弱；
+#   levy：Levy 随机游走，适合分布外鲁棒性测试，不建议作为唯一正式场景。
+DYNAMIC_MOVEMENT = linear
+
+# 是否让场景生成器使用随机速度逻辑。false 时直接在下方速度区间均匀采样，
+# 当前自定义测试推荐 false，以确保上下限含义明确。
+DYNAMIC_RANDOM_SPEED = false
+
+# 动态障碍船速度区间。必须满足 0 <= MIN <= MAX。
+DYNAMIC_MIN_SPEED_MPS = 1.0
+DYNAMIC_MAX_SPEED_MPS = 2.0
+
+# 动态障碍船是否遵守 COLREGs。该开关只控制动态船自身的规则行为，
+# 与 AGENT_RULE_MODE 相互独立：policy_only 仍可面对遵规动态船。
+DYNAMIC_VESSEL_COLREGS = true
+
+[placement]
+
+# 初始场景布置模式：
+#   random：使用系统随机数生成本次基础种子；终端会打印种子，保存后可复现；
+#   seeded_random：严格使用 BASE_SEED+i，适合论文重复实验与算法公平对比；
+#   fixed：完全使用下方四组 JSON 指定位置、航向、速度和半径；
+#   stress：先进行有间距的种子随机布置，再把动态船航向调整为穿越追踪主航路，
+#           用于增加会遇概率，但不保证每回合属于同一种 COLREGs 会遇类型。
+PLACEMENT_MODE = seeded_random
+
+# 完整场景生成失败后的最大重试次数。障碍物多、地图小、间距大时需要提高；
+# 若经常达到上限，应优先降低障碍物密度或间距，而不是无限增加重试次数。
+MAX_PLACEMENT_RETRIES = 50
+
+# 智能体和目标生成时距地图边界的额外留白。
+AGENT_TARGET_MARGIN_M = 20.0
+
+# 静态障碍物之间，除双方半径外必须保留的最小净间距。
+STATIC_CLEARANCE_M = 20.0
+
+# 船舶（智能体、目标、动态船）与静态障碍物之间的最小净间距。
+VESSEL_STATIC_CLEARANCE_M = 25.0
+
+# 船舶与船舶在初始生成时，除双方半径外必须保留的最小净间距。
+VESSEL_VESSEL_CLEARANCE_M = 30.0
+
+# 静态障碍物与地图边界之间，除自身半径外的额外留白。
+STATIC_BOUNDARY_MARGIN_M = 10.0
+
+# 动态障碍船与地图边界之间，除自身半径外的额外留白。
+DYNAMIC_BOUNDARY_MARGIN_M = 15.0
+
+# 以下 JSON 只在 PLACEMENT_MODE=fixed 时读取；其他模式可以保留示例值。
+# 四个 JSON 的列表长度必须分别等于 NUM_AGENTS、NUM_TARGETS、
+# NUM_DYNAMIC_OBSTACLES、NUM_STATIC_OBSTACLES。所有位置采用地图中心坐标系。
+#
+# 智能体字段：position_m=[x,y]、heading_deg、speed_mps。
+FIXED_AGENT_JSON = [{"position_m":[-220.0,-80.0],"heading_deg":15.0,"speed_mps":0.0}]
+
+# 目标字段：position_m=[x,y]、heading_deg、speed_mps。static 模式应填 speed_mps=0。
+FIXED_TARGET_JSON = [{"position_m":[180.0,100.0],"heading_deg":0.0,"speed_mps":0.0}]
+
+# 动态船字段：position_m、heading_deg、speed_mps、radius_m。
+# heading_deg=0 指向 +x，90 指向 +y，-90 指向 -y。
+FIXED_DYNAMIC_JSON = [{"position_m":[-20.0,120.0],"heading_deg":-90.0,"speed_mps":1.2,"radius_m":12.0},{"position_m":[80.0,-130.0],"heading_deg":90.0,"speed_mps":1.6,"radius_m":15.0}]
+
+# 静态障碍字段：position_m、radius_m；不需要航向和速度。
+FIXED_STATIC_JSON = [{"position_m":[-100.0,40.0],"radius_m":12.0},{"position_m":[40.0,40.0],"radius_m":15.0},{"position_m":[120.0,-50.0],"radius_m":10.0}]
+
+[disturbance]
+
+# 洋流模式：
+#   off：关闭洋流并把流速设为 0；
+#   random：每个回合在 [0, MAX_CURRENT_SPEED_MPS] 采样流速并随机采样方向；
+#   fixed：每回合使用 FIXED_CURRENT_SPEED_MPS 与 FIXED_CURRENT_DIRECTION_DEG。
+CURRENT_MODE = random
+
+# random 模式的最大流速，同时也是环境创建阶段的安全上限。
+MAX_CURRENT_SPEED_MPS = 0.10
+
+# fixed 模式的固定流速和方向；0 deg 指向 +x，90 deg 指向 +y。
+FIXED_CURRENT_SPEED_MPS = 0.05
+FIXED_CURRENT_DIRECTION_DEG = 45.0
+
+# 目标位置传感方式：
+#   direct_noisy：直接观测目标相对位置并叠加高斯误差，当前训练推荐模式；
+#   其他旧值（LS/KM/PF）依赖遗留估计模块，不建议在当前策略泛化测试中启用。
+TARGET_OBSERVATION_MODE = direct_noisy
+
+# direct_noisy 模式下，目标 x/y 坐标独立高斯测量误差的标准差。
+TARGET_POSITION_NOISE_STD_M = 1.0
+
+[dynamics]
+
+# 是否完整沿用训练配置中的时间尺度、3DOF 限制和动作平滑参数：
+#   true：推荐的公平策略评估，只改变场景，不改变船舶动力学；
+#   false：启用下方动力学覆盖值，适合模型失配、采样周期变化等鲁棒性测试。
+# 无论 true/false，下方 COLREGs 距离和避障缓冲仍按本测试地图显式生效。
+PRESERVE_TRAINING_DYNAMICS = true
+
+# 以下参数在 PRESERVE_TRAINING_DYNAMICS=false 时覆盖训练动力学。
+# ENVIRONMENT_DT_S 必须是 USV_3DOF_DT_S 的整数倍。
+ENVIRONMENT_DT_S = 1.0
+USV_3DOF_DT_S = 0.1
+
+# 智能体 3DOF 速度上限：纵向前进、纵向倒车、横向漂移。
+USV_MAX_SURGE_SPEED_MPS = 3.0
+USV_MAX_REVERSE_SPEED_MPS = 0.5
+USV_MAX_SWAY_SPEED_MPS = 1.0
+
+# 推力命令每秒最大变化量，用于限制瞬间加减速。
+USV_MAX_THRUST_RATE_NPS = 80.0
+
+# 最大舵角、舵角每秒最大变化率、船体最大艏向角速度。
+USV_MAX_RUDDER_ANGLE_DEG = 25.0
+USV_MAX_RUDDER_RATE_DEG_S = 8.0
+USV_MAX_YAW_RATE_DEG_S = 20.0
+
+# 动作平滑系数 alpha，范围 (0,1]：
+# applied = alpha * current_filtered + (1-alpha) * previous_applied。
+# 越小越平滑但响应越慢；1 表示不做跨环境步的额外指数平滑。
+ACTION_SMOOTHING_ALPHA = 0.35
+
+# 动态障碍船最大转向率、每秒随机航向扰动和最大线加速度。
+DYNAMIC_MAX_TURN_RATE_DEG_S = 8.0
+DYNAMIC_HEADING_NOISE_DEG_S = 2.0
+DYNAMIC_MAX_ACCEL_MPS2 = 0.2
+
+# 智能体动作执行前的额外安全距离，参与运动安全约束。
+MOTION_EXECUTION_SAFETY_BUFFER_M = 5.0
+
+# COLREGs 风险评估时间窗：在未来多少秒内计算 TCPA/DCPA 风险。
+COLREGS_RISK_TIME_HORIZON_S = 60.0
+
+# 最小会遇 CPA 距离、规则安全缓冲、进入紧急动作集的距离阈值。
+COLREGS_MIN_CPA_DISTANCE_M = 30.0
+COLREGS_SAFETY_BUFFER_M = 10.0
+COLREGS_EMERGENCY_DISTANCE_M = 50.0
+
+# 动态船/目标的几何即时避障缓冲。VESSEL_BUFFER 专用于船舶间紧急避让。
+GEOMETRIC_AVOIDANCE_BUFFER_M = 20.0
+GEOMETRIC_VESSEL_BUFFER_M = 30.0
+
+# 预测避障向前检查时长，以及预测到船舶接近时使用的净安全缓冲。
+PREDICTIVE_HORIZON_S = 60.0
+PREDICTIVE_VESSEL_BUFFER_M = 30.0
+
+# 动态实体接近边界多少米时开始向地图内部调整航向。
+BOUNDARY_TURN_MARGIN_M = 30.0
+
+# body-frame 观测中的边界风险预警距离。船体距墙小于该距离时，
+# boundary_risk_x_body/y_body 会逐渐从 0 增大，供策略提前调整航向。
+# 它不是物理碰撞边界，也不会直接改变 done 判定。
+OBSERVATION_BOUNDARY_RISK_DISTANCE_M = 100.0
+
+[output]
+
+# 是否在 PNG/GIF 中显示静态障碍物的圆形碰撞边界。
+# false 时只隐藏显示，仿真中的碰撞判定与裁剪边界仍然有效。
+SHOW_COLLISION_BOUNDARY = true
+
+# 静态障碍物视觉分档比例：大岛（带绿洲）:中等沙岛:小型礁石。
+# 2:3:5 表示按当前障碍物尺寸从大到小分配约 20%/30%/50%。
+STATIC_OBSTACLE_VISUAL_RATIO = 2:3:5
+
+# 自定义输出根目录。留空时保存到：
+# D:/USV/logs/<TRAINING_RUN_NAME>/evaluation/<TEST_NAME>/<timestamp>/
+# 填写后保存到：<OUTPUT_ROOT>/<TEST_NAME>/<timestamp>/
+OUTPUT_ROOT =
+
+# 是否保存每回合最终轨迹 PNG。PNG 展示所有实体的圆形尺寸和完整长尾轨迹。
+SAVE_PNG = true
+
+# 是否保存动画 GIF。回合很多时 GIF 最耗时、最占空间，可在统计测试中关闭。
+SAVE_GIF = true
+
+# 每隔多少个回合保存一次 GIF。1 表示每回合；10 表示第 1、11、21... 回合。
+SAVE_GIF_EVERY = 1
+
+# GIF 每隔多少个环境步取一帧。1 保留全部帧；5 可显著减小生成时间和文件大小。
+GIF_FRAME_STRIDE = 1
+
+# GIF 播放帧率，只影响播放速度，不影响仿真时间尺度和测试结果。
+GIF_FPS = 12
+
+# 是否保存实体逐步轨迹 CSV：每行包括实体类别、名称、位置与实际半径。
+SAVE_TRAJECTORY_CSV = true
+
+# 是否保存智能体逐步动作/状态 CSV：包括 raw、constrained、applied 动作，
+# 规则介入、奖励分项、目标距离、安全净空以及 3DOF u/v/r、推力、舵角。
+SAVE_ACTION_STATE_CSV = true
+
+# 是否保存 episode_summary.csv，包含成功/碰撞/出界/超时、路径效率、
+# 最小净空、规则介入率和动作平滑性等论文统计入口。
+SAVE_EPISODE_SUMMARY_CSV = true
+
+# 是否保存最终合并配置和原始测试配置副本，建议始终开启以保证实验可复现。
+SAVE_EFFECTIVE_CONFIG = true
+
+# 是否保存 run_manifest.json，其中包含断点路径、种子、网络契约、
+# 每回合指标和各规则模式聚合统计。
+SAVE_JSON_MANIFEST = true

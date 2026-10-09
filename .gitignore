@@ -1,0 +1,15 @@
+# --- 生成物与大文件（不入库） ---
+__pycache__/
+*.py[cod]
+*.pt
+*.file
+*.log
+smoke_artifacts/
+curriculum/*_out/
+curriculum/**/colregs_step_log.csv
+curriculum/**/colregs_event_log.csv
+*.png
+*.gif
+*.mp4
+.idea/
+.vscode/
