@@ -259,4 +259,6 @@ def make_env(
             profile_timing=profile_timing,
         )
 
+    # 单环境构造同样支持会遇生成（自定义评测路径；默认关闭时零影响）
+    env = wrap_encounter_if_enabled(env, environment_config, map_half_size)
     return env
