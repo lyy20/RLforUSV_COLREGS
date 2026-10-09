@@ -52,6 +52,14 @@ def main():
               "--json-out", str(out_dir / "designed_encounter.json")], ROOT)
     if rc != 0:
         return rc
+    try:
+        sys.path.insert(0, str(ROOT / "evaluation"))
+        import importlib
+        _jr = importlib.import_module("joint_report")
+        print("", flush=True)
+        _jr.build_joint_report(out_dir, args.encounter)
+    except Exception as exc:
+        print("[joint-report] skipped: %s" % exc)
     print("\n[A0] artifacts:", flush=True)
     for name in ("designed_encounter.json", "designed_encounter_summary.csv", "colregs_step_log.csv"):
         p = out_dir / name
