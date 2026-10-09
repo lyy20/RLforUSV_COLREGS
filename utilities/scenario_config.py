@@ -75,6 +75,8 @@ DEFAULT_ENVIRONMENT_CONFIG = {
     # 可选 DAgger 教师聚合，默认关闭以兼容旧实验。
     "dagger_enabled": False,
     "dagger_teacher_weight": 1.0,
+    # 训练期是否启用 COLREGs 动作过滤（安全层）；默认 True 兼容旧实验
+    "agent_colregs_action_filter_enabled": True,
     # ===== P0-1/P0-2 会遇生成与接受判据（默认 0 = 关闭，保持旧行为） =====
     "encounter_generation_mode": 0.0,      # 0=legacy 随机放置；1=CPA 倒推生成
     "encounter_tcpa_min_s": 60.0,
@@ -96,6 +98,7 @@ BOOLEAN_ENVIRONMENT_KEYS = {
     "target_predictive_avoidance_enabled",
     "colregs_persistent_state_enabled",
     "dagger_enabled",
+    "agent_colregs_action_filter_enabled",
 }
 
 

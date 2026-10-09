@@ -36,8 +36,8 @@ def probe(cfg_name, episodes=3, steps=200):
     print("  %-46s steps=%d  filter_active_rate=%.2f%%" % (cfg_name, total, rate))
     return rate
 
-print("== 过滤器发声率（rollout 实测） ==")
-b = probe("SAC_3DOF_ENTITY_ENCODER_0911_BASELINE.txt")
-d = probe("SAC_3DOF_ENTITY_ENCODER_0911_DENSE.txt")
-wd = probe("SAC_3DOF_ENTITY_ENCODER_0911_DENSE_WIDE.txt")
-print("summary: baseline=%.2f%% dense=%.2f%% dense_wide=%.2f%%" % (b, d, wd))
+print("== 过滤器发声率（三臂，rollout 实测） ==")
+a = probe("SAC_3DOF_ENTITY_ENCODER_ARM_A_PURE.txt")
+b = probe("SAC_3DOF_ENTITY_ENCODER_ARM_B_FILTER.txt")
+c = probe("SAC_3DOF_ENTITY_ENCODER_ARM_C_IL.txt")
+print("summary: A_pure=%.2f%%  B_filter=%.2f%%  C_il=%.2f%%" % (a, b, c))

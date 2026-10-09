@@ -1149,6 +1149,11 @@ class Scenario(BaseScenario):
         world.num_static_ob_slots = num_static_ob_slots
         world.scenario_profile = str(scenario_profile)
         world.environment_config = dict(environment_config)
+
+        # filter switch from environment_config（训练期可关；评估脚本仍可逐回合覆盖）
+        world.agent_colregs_action_filter_enabled = bool(
+            environment_config.get('agent_colregs_action_filter_enabled', True)
+        )
         world.dt = environment_config['environment_dt']
         world.max_episode_steps = environment_config['max_episode_steps']
         world.timeout_termination_enabled = environment_config['timeout_termination_enabled']

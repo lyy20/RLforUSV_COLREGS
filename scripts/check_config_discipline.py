@@ -11,14 +11,16 @@ def check(cfg_path):
     pre = s.getboolean("PRE_TRAINED", fallback=False)
     md = LOGS / run / "model_dir"
     has_ckpt = md.exists() and any(md.glob("episode_*.pt"))
+    active = ("0911" in run) or ("ARM" in run)
     ok = (not pre) or has_ckpt
-    print("%-58s PRE_TRAINED=%-5s ckpt=%-5s %s" % (Path(cfg_path).name, pre, has_ckpt, "OK" if ok else "FAIL"))
-    return ok
+    tag = "OK" if ok else ("FAIL" if active else "SKIP(legacy)")
+    print("%-58s PRE_TRAINED=%-5s ckpt=%-5s %s" % (Path(cfg_path).name, pre, has_ckpt, tag))
+    return ok or (not active)
 if __name__ == "__main__":
     import glob, os
     root = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(r"D:\DSH_USV_Learning\USV_COLREGS")
     bad = 0
-    for f in sorted(root.glob("*0911*.txt")):
+    for f in sorted(root.glob("SAC_*.txt")):
         try:
             if not check(f): bad += 1
         except Exception as exc:
