@@ -1,5 +1,10 @@
 # 三臂归因结果（2026-10-09，安全层关闭，40 episodes/臂）
 
+> ⚠️ **本文件的策略级结论已撤回**：评估所用策略仅训练 ~1000 回合（项目基线为 1.2M 回合量级），
+> 且为单 seed、无置信区间。详见 `docs/实验有效性边界声明.md`。
+> 本文件**仅可用于**评估路径与指标管线的工程验证，**不得**用于策略质量结论。
+
+
 评测协议：`see_trained_custom.py curriculum/A0_ATTRIB_ARM_<X>.txt --variants sac --episodes 40`
 （`sac` = `policy_only`，即**撤除智能体 COLREGs 安全动作过滤器**，只看策略自身）。
 环境：`DENSE_REAL`（CPA/L=5.0、探测/L=15、horizon 180 s）；会遇由训练同款生成器注入（见下方修复）。
