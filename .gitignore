@@ -13,3 +13,4 @@ curriculum/**/colregs_event_log.csv
 *.mp4
 .idea/
 .vscode/
+.codex-finalizer/
