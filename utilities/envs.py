@@ -36,6 +36,21 @@ DEFAULT_DYNAMIC_OBSTACLE_MAX_SPEED = None
 DEFAULT_REWARD_CONFIG = None
 DEFAULT_ENVIRONMENT_CONFIG = None
 
+
+def wrap_encounter_if_enabled(env, environment_config=None, map_half_size=None):
+    """当 encounter_generation_mode >= 0.5 时套上会遇生成包装器（P0-1/P0-2）。"""
+    cfg = dict(environment_config or {})
+    if map_half_size is not None:
+        cfg['map_half_size'] = float(map_half_size)
+    try:
+        mode = float(cfg.get('encounter_generation_mode', 0.0) or 0.0)
+    except (TypeError, ValueError):
+        mode = 0.0
+    if mode < 0.5:
+        return env
+    from utilities.encounter_wrapper import EncounterResetWrapper
+    return EncounterResetWrapper(env, cfg)
+
 def make_parallel_env(
     n_rollout_threads,
     scenario,
@@ -120,6 +135,7 @@ def make_parallel_env(
             )
             env.seed(seed + rank * 1000)
             np.random.seed(seed + rank * 1000)
+            env = wrap_encounter_if_enabled(env, environment_config, map_half_size)
             return env
         return init_env
 #    if n_rollout_threads == 1:
