@@ -1,0 +1,32 @@
+{
+ "A_PURE": {
+  "success_rate": 0.0,
+  "timeout_rate": 0.825,
+  "zero_event_ratio": 0.0,
+  "filter_active_rate": 0.0,
+  "internalization_rate": 0.02237446581196581,
+  "a0_compliance_ratio": 0.7,
+  "a0_anti_rule_ratio": 0.562,
+  "first_compliance_step": 81
+ },
+ "B_FILTER": {
+  "success_rate": 0.025,
+  "timeout_rate": 0.15,
+  "zero_event_ratio": 0.95,
+  "filter_active_rate": 0.0,
+  "internalization_rate": 0.0,
+  "a0_compliance_ratio": 0.242,
+  "a0_anti_rule_ratio": 0.715,
+  "first_compliance_step": 161
+ },
+ "C_IL": {
+  "success_rate": 0.1,
+  "timeout_rate": 0.425,
+  "zero_event_ratio": 0.0,
+  "filter_active_rate": 0.0,
+  "internalization_rate": 0.05416666666666666,
+  "a0_compliance_ratio": 0.526,
+  "a0_anti_rule_ratio": 0.25,
+  "first_compliance_step": 1206
+ }
+}
