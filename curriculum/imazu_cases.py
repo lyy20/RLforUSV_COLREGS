@@ -51,21 +51,25 @@ def load_cases(case_dir=None):
 
 
 def to_relative(case, rotate_sign=-1.0):
-    """以 ship0 为本船：位置差（米）+ 航向（弧度），并把本船航向旋到 0。"""
-    own = case["ships"][0]
-    x0, y0, u0, chi0 = own
-    psi0 = math.radians(chi0)
-    cos0, sin0 = math.cos(rotate_sign * psi0), math.sin(rotate_sign * psi0)
+    """以 ship0 为本船做归一化。
+
+    坐标/航向约定修正（关键）：YAML 的 csog_state = [northing, easting, U, chi]，
+    且 chi 为**航海约定**（自正北顺时针）。需转到数学约定：
+        east = yaml[1], north = yaml[0]
+        psi_math = radians(90 - chi)
+    """
+    own = case['ships'][0]
+    n0, e0, u0, chi0 = own
+    psi0 = math.radians(90.0 - chi0)
+    c, s = math.cos(-psi0), math.sin(-psi0)
     targets = []
-    for (x, y, u, chi) in case["ships"][1:]:
-        dx, dy = x - x0, y - y0
-        if rotate_sign < 0:
-            rx = dx * cos0 + dy * sin0
-            ry = -dx * sin0 + dy * cos0
-        else:
-            rx = dx * cos0 - dy * sin0
-            ry = dx * sin0 + dy * cos0
-        psi = math.radians(chi) - psi0
-        targets.append({"x_m": rx, "y_m": ry, "speed_mps": u, "heading_rad": psi})
-    return {"name": case["name"], "type": case["type"], "ownship": {"x_m": 0.0, "y_m": 0.0,
-            "speed_mps": u0, "heading_rad": 0.0}, "targets": targets}
+    for (n, e, u, chi) in case['ships'][1:]:
+        d_east = e - e0
+        d_north = n - n0
+        rx = d_east * c - d_north * s
+        ry = d_east * s + d_north * c
+        psi = math.radians(90.0 - chi) - psi0
+        targets.append({'x_m': rx, 'y_m': ry, 'speed_mps': u, 'heading_rad': psi})
+    return {'name': case['name'], 'type': case['type'],
+            'ownship': {'x_m': 0.0, 'y_m': 0.0, 'speed_mps': u0, 'heading_rad': 0.0},
+            'targets': targets}
