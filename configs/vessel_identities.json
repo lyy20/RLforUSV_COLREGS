@@ -1,0 +1,115 @@
+{
+ "meta": {
+  "schema_version": 1,
+  "created": "2026-10-10",
+  "sources": {
+   "colav_models": "_refs/colav-simulator/colav_simulator/core/models.py",
+   "imo_msc137": "IMO MSC.137(76): advance<=4.5L, tactical diameter<=5L, stop<=15L, 10/10 zigzag overshoot<=10~20deg",
+   "solas_steering": "SOLAS II-1/29.3.2: rudder 35deg->35deg <=28 s (=2.5 deg/s); 原文待逐字核对",
+   "ais_2022": "Moss/Horten 2022, 196 identified encounters (repo script)",
+   "colav_maxrudder": "colav-simulator models.py:281 max_rudder_angle=35deg"
+  }
+ },
+ "scene": {
+  "usv_length_m": 20,
+  "length_scale": 1,
+  "preserve_dimensionless": true
+ },
+ "identities": [
+  {
+   "id": "csog_10m",
+   "name": "KinematicCSOG 10m workboat",
+   "grade": "C",
+   "source": "colav_models",
+   "length_m": 10,
+   "beam_m": 3,
+   "draft_m": 0.5,
+   "mass_kg": null,
+   "iz_kgm2": null,
+   "speed_max_mps": 15,
+   "course_time_constant_s": 3,
+   "speed_time_constant_s": 5,
+   "max_turn_rate_deg_s": 4,
+   "max_rudder_angle_deg": 35
+  },
+  {
+   "id": "viknes_845",
+   "name": "Viknes 8.45m workboat (full 3DOF)",
+   "grade": "C",
+   "source": "colav_models",
+   "length_m": 8.45,
+   "beam_m": 2.71,
+   "draft_m": 0.5,
+   "mass_kg": 3980,
+   "iz_kgm2": 19703,
+   "speed_max_mps": 10,
+   "max_turn_rate_deg_s": 15,
+   "max_rudder_angle_deg": 35,
+   "thrust_limit_x_n": [
+    -6550,
+    13100
+   ],
+   "max_accel_mps2": 3.29
+  },
+  {
+   "id": "gunnerus_3125",
+   "name": "R/V Gunnerus 31.25m",
+   "grade": "C",
+   "source": "colav_models",
+   "length_m": 31.25,
+   "beam_m": 9.6,
+   "draft_m": 2.7,
+   "mass_kg": 574127.69,
+   "iz_kgm2": 41237080,
+   "speed_max_mps": null,
+   "max_rudder_angle_deg": 35
+  },
+  {
+   "id": "cybership2_8785",
+   "name": "CyberShip2 scaled x70 (87.85m)",
+   "grade": "C",
+   "source": "colav_models",
+   "length_m": 87.85,
+   "beam_m": 20.3,
+   "draft_m": 5,
+   "max_rudder_angle_deg": 35
+  },
+  {
+   "id": "ais_median_130",
+   "name": "AIS observed vessel (median 130m)",
+   "grade": "B",
+   "source": "ais_2022",
+   "length_m": 130,
+   "speed_median_mps": 3.44,
+   "cpa_over_length_median": [
+    4.52,
+    9.17,
+    8.68,
+    9.93,
+    3
+   ],
+   "max_rudder_angle_deg": 35
+  }
+ ],
+ "sampling": {
+  "enabled": false,
+  "weights": {
+   "csog_10m": 0.3,
+   "viknes_845": 0.2,
+   "gunnerus_3125": 0.25,
+   "cybership2_8785": 0.1,
+   "ais_median_130": 0.15
+  }
+ },
+ "derivation": {
+  "k_index": "K = r_ss / rudder_max, r_ss = 2*v/(5L) (IMO tactical diameter <=5L)",
+  "yaw_accel": "r_dot_max = K * rudder_rate",
+  "rudder_rate_solas": "2.5 deg/s (SOLAS 35->35 in 28 s) for L>=50m; small craft 10-30 deg/s (grade C/D)",
+  "imo_checks": [
+   "advance <= 4.5L",
+   "tactical diameter <= 5L",
+   "stopping track reach <= 15L",
+   "10/10 zig-zag first overshoot <= 10 deg (L/V<10s) to 20 deg (L/V>=30s)"
+  ]
+ }
+}

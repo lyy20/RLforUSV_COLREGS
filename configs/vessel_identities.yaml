@@ -1,0 +1,99 @@
+# 船舶身份参数集（含出处），供动态船多身份抽样使用
+# 依据分级: A=权威标准 B=实测数据 C=同行实现 D=任务设定
+meta:
+  schema_version: 1
+  created: '2026-10-10'
+  sources:
+    colav_models: '_refs/colav-simulator/colav_simulator/core/models.py'
+    imo_msc137: 'IMO MSC.137(76) 操纵性标准（advance<=4.5L, tactical diameter<=5L, 停船<=15L, 10/10 zigzag 首超越角<=10~20deg）'
+    solas_steering: 'SOLAS II-1/29.3.2（主操舵装置 35°->35° <=28 s，即约 2.5 deg/s；原文数值待逐字核对）'
+    ais_2022: 'Moss/Horten 2022 已识别会遇 196 个（本仓库 scripts/calibrate_ais_distribution.py）'
+    colav_maxrudder: 'colav-simulator models.py:281  max_rudder_angle = 35 deg'
+
+# 场景尺度：把身份映射进本项目 20 m 级 USV 世界（保持无量纲比）
+scene:
+  usv_length_m: 20.0
+  length_scale: 0.15      # 默认把 130 m 商船按 0.15 缩到 ~20 m 量级；1.0 = 真实尺寸
+  preserve_dimensionless: true
+
+identities:
+  - id: csog_10m
+    name: KinematicCSOG（10 m 工作艇）
+    grade: C
+    source: colav_models
+    length_m: 10.0
+    beam_m: 3.0
+    draft_m: 0.5
+    mass_kg: null
+    iz_kgm2: null
+    speed_max_mps: 15.0
+    course_time_constant_s: 3.0
+    speed_time_constant_s: 5.0
+    max_turn_rate_deg_s: 4.0
+    max_rudder_angle_deg: 35.0
+
+  - id: viknes_845
+    name: Viknes（8.45 m 工作艇，含完整 3DOF 参数）
+    grade: C
+    source: colav_models
+    length_m: 8.45
+    beam_m: 2.71
+    draft_m: 0.5
+    mass_kg: 3980.0
+    iz_kgm2: 19703.0
+    speed_max_mps: 10.0
+    max_turn_rate_deg_s: 15.0
+    max_rudder_angle_deg: 35.0
+    thrust_limit_x_n: [-6550.0, 13100.0]
+    max_accel_mps2: 3.29
+
+  - id: gunnerus_3125
+    name: R/V Gunnerus（31.25 m 科考船）
+    grade: C
+    source: colav_models
+    length_m: 31.25
+    beam_m: 9.6
+    draft_m: 2.7
+    mass_kg: 574127.69
+    iz_kgm2: 41237080.0
+    speed_max_mps: null
+    max_rudder_angle_deg: 35.0
+
+  - id: cybership2_8785
+    name: CyberShip2（70 倍尺度化，87.85 m）
+    grade: C
+    source: colav_models
+    length_m: 87.85
+    beam_m: 20.3
+    draft_m: 5.0
+    max_rudder_angle_deg: 35.0
+
+  - id: ais_median_130
+    name: AIS 实测他船（中位 130 m 级）
+    grade: B
+    source: ais_2022
+    length_m: 130.0
+    speed_median_mps: 3.44
+    cpa_over_length_median: [4.52, 9.17, 8.68, 9.93, 3.00]
+    max_rudder_angle_deg: 35.0
+
+# 抽样权重：默认按本仓库 AIS 实测的会遇类型构成（交叉占多数）
+sampling:
+  enabled: false            # 默认关闭，保持旧实验行为
+  weights:
+    csog_10m: 0.30
+    viknes_845: 0.20
+    gunnerus_3125: 0.25
+    cybership2_8785: 0.10
+    ais_median_130: 0.15
+
+# 由身份导出、可直接写进环境配置的量（公式见 docs/plan/船舶身份参数集方案.md）
+derivation:
+  k_index: 'K = r_ss / rudder_max，r_ss 取 IMO 回转直径<=5L 的下界 r_ss = 2*v/(5L)'
+  yaw_accel: 'r_dot_max = K * rudder_rate'
+  rudder_rate_solas: '2.5 deg/s（SOLAS 35->35 in 28 s）商船；小艇 10~30 deg/s（待补引用）'
+  imo_checks:
+    - 'advance <= 4.5L'
+    - 'tactical diameter <= 5L'
+    - 'stopping track reach <= 15L'
+    - '10/10 zig-zag 首超越角 <= 10 deg (L/V<10s) ~ 20 deg (L/V>=30s)'

@@ -89,6 +89,9 @@ DEFAULT_ENVIRONMENT_CONFIG = {
     "encounter_head_on_weight": 1.0,
     "encounter_crossing_weight": 1.0,
     "encounter_overtaking_weight": 1.0,
+    # 动态船多身份抽样（默认关闭；开启后按 configs/vessel_identities.json 的权重抽样）
+    "vessel_identity_sampling_enabled": False,
+    "vessel_identity_length_scale": 1.0,
 }
 
 BOOLEAN_ENVIRONMENT_KEYS = {
@@ -99,6 +102,7 @@ BOOLEAN_ENVIRONMENT_KEYS = {
     "colregs_persistent_state_enabled",
     "dagger_enabled",
     "agent_colregs_action_filter_enabled",
+    "vessel_identity_sampling_enabled",
 }
 
 

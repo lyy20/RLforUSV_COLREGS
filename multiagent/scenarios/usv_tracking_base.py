@@ -1319,6 +1319,13 @@ class Scenario(BaseScenario):
         self.colregs_obstacle_max_turn = np.deg2rad(
             environment_config['dynamic_obstacle_max_turn_rate_deg_s']
         ) * world.dt
+        self.vessel_identity_sampling_enabled = bool(
+            environment_config.get('vessel_identity_sampling_enabled', False)
+        )
+        self.vessel_identity_length_scale = float(
+            environment_config.get('vessel_identity_length_scale', 1.0) or 1.0
+        )
+        self.vessel_identity_last = None
         self.colregs_starboard_turn = 0.45
         self.colregs_give_way_speed_factor = 0.75
         self.colregs_overtaking_speed_factor = 0.85
@@ -1491,8 +1498,34 @@ class Scenario(BaseScenario):
         
         return world
 
+    def _apply_vessel_identity(self, world):
+        """按身份权重抽样，覆盖本回合动态船的尺寸/加速度/最大转艏率。"""
+        if not getattr(self, 'vessel_identity_sampling_enabled', False):
+            return None
+        try:
+            from utilities.vessel_identities import load_identities, sample_identity, derive
+        except Exception:
+            return None
+        data = load_identities()
+        scene = dict(data.get('scene') or {})
+        scene['length_scale'] = float(getattr(self, 'vessel_identity_length_scale', 1.0) or 1.0)
+        ident = sample_identity(np.random.default_rng(), data)
+        d = derive(ident, scene)
+        self.dynamic_obstacle_min_size = d['radius_km'] * 0.9
+        self.dynamic_obstacle_max_size = d['radius_km'] * 1.1
+        self.dynamic_obstacle_max_accel = d['max_accel_mps2'] / max(float(world.usv_3dof_m_per_km), 1.0e-9)
+        self.colregs_obstacle_max_turn = np.deg2rad(d['max_yaw_rate_deg_s']) * float(world.dt)
+        self.vessel_identity_last = d
+        try:
+            world.vessel_identity_last = d
+        except Exception:
+            pass
+        return d
+
+
     def reset_world(self, world):
         """Regenerate a complete valid scene, retrying only failed layouts."""
+        self._apply_vessel_identity(world)
         max_retries = max(int(getattr(self, 'scene_generation_max_retries', 50)), 1)
         last_error = None
         for layout_attempt in range(1, max_retries + 1):
