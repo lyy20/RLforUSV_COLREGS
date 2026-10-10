@@ -214,3 +214,4 @@ encounter_verify_steps = 40
 encounter_verify_tol_rel = 2.0
 encounter_verify_tol_abs_m = 50.0
 encounter_verify_max_tries = 6
+encounter_target_hold_course = true

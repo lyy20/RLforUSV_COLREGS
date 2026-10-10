@@ -118,6 +118,8 @@ DEFAULT_ENVIRONMENT_CONFIG = {
     "encounter_verify_max_tries": 6.0,
     # B：设计只承诺「初始几何 + 会遇确实形成」；CPA 上限是硬门
     "encounter_verify_max_cpa_m": 300.0,
+    # 会遇目标船是否保持航向航速（=遵守 Rule 17 直航义务；使预定 CPA 成立）
+    "encounter_target_hold_course": True,
 }
 
 BOOLEAN_ENVIRONMENT_KEYS = {
@@ -131,6 +133,7 @@ BOOLEAN_ENVIRONMENT_KEYS = {
     "vessel_identity_sampling_enabled",
     "initial_heading_random",
     "encounter_verify_rollout",
+    "encounter_target_hold_course",
 }
 
 

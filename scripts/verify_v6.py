@@ -42,12 +42,21 @@ for ep in range(EP):
             if dd < info[i]["min"]: info[i]["min"] = dd
         if bool(np.any(dones)): break
     for i, v in info.items():
-        if v["des"] > 0: rows.append((v["des"], v["min"]))
+        if v["des"] > 0:
+            _mode = getattr(dict(marked)[i], "encounter_motion_mode", "?")
+            rows.append((v["des"], v["min"], _mode))
 print("重置 %d 次 | 随机朝向样本 %d 个" % (EP, len(headings)))
 if headings:
     hs = np.array(headings)
     print("  朝向: 最小 %.0f 最大 %.0f 标准差 %.1f deg (应接近均匀分布, sd~104)" % (hs.min(), hs.max(), hs.std()))
 print("运动方式分布:", dict(modes))
+per_mode = {}
+for d_, m_, md in rows:
+    per_mode.setdefault(md, []).append((d_, m_))
+print("--- 按运动方式拆分 ---")
+for md, vals in sorted(per_mode.items()):
+    dd = np.array([x[0] for x in vals]); rr = np.array([x[1] for x in vals])
+    print("  %-10s n=%2d 设计中位 %5.1f m | 实际中位 %6.1f m | 比值 %5.2f" % (md, len(vals), np.median(dd)*1000, np.median(rr)*1000, np.median(rr/dd)))
 des = np.array([r[0] for r in rows]); real = np.array([r[1] for r in rows])
 if len(rows):
     print("设计 DCPA 中位 %.1f m | 实际最近中位 %.1f m | 比值中位 %.2f" % (np.median(des)*1000, np.median(real)*1000, np.median(real/des)))

@@ -1352,6 +1352,13 @@ class Scenario(BaseScenario):
             environment_config.get('vessel_identity_length_scale', 1.0) or 1.0
         )
         self.vessel_identity_last = None
+        if bool(environment_config.get('encounter_target_hold_course', False)):
+            # 直航船语义：保持航向航速（Rule 17），禁用自主避让
+            self.colregs_obstacle_max_turn = 0.0
+            self.colregs_starboard_turn = 0.0
+            self.colregs_give_way_speed_factor = 1.0
+            self.colregs_overtaking_speed_factor = 1.0
+            self.colregs_emergency_speed_factor = 1.0
         self.colregs_starboard_turn = 0.45
         self.colregs_give_way_speed_factor = 0.75
         self.colregs_overtaking_speed_factor = 0.85
