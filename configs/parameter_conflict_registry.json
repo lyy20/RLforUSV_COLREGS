@@ -149,6 +149,34 @@
    "other_sources": [],
    "kind": "none",
    "resolution": "作为【生成后校验】使用：check_encounter_against_colav.py 检查生成会遇是否落在其范围内"
+  },
+  {
+   "id": 11,
+   "param": "usv_max_surge_speed",
+   "ours": "usv_max_surge_speed",
+   "colav": "CSOG U_max 15 m/s",
+   "other_sources": [
+    {
+     "src": "reachability",
+     "value": "v_u >= v_t + (d0-r)/T = 5.73 m/s"
+    }
+   ],
+   "kind": "true_conflict",
+   "resolution": "用户裁定：3.0 -> 6.0 m/s（11.7 kn，20 m 巡逻艇合理）；本船为追捕方属快艇，他船为交通流"
+  },
+  {
+   "id": 12,
+   "param": "encounter_type_weights",
+   "ours": "encounter_head_on/crossing/overtaking_weight",
+   "colav": "按类型生成（无权重概念）",
+   "other_sources": [
+    {
+     "src": "AIS_2022",
+     "value": "HO 56 / CRGW 67 / CRSO 68 / OT 5"
+    }
+   ],
+   "kind": "semantics_mismatch",
+   "resolution": "用户原则=全覆盖+溢出：取 AIS 比例为主，但给追越设覆盖下限（OT 0.6），避免极端欠采样；不采用类型优先生成（会收窄分布）"
   }
  ]
 }
