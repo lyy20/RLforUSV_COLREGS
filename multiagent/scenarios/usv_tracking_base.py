@@ -1542,7 +1542,8 @@ class Scenario(BaseScenario):
         data = load_identities()
         scene = dict(data.get('scene') or {})
         scene['length_scale'] = float(getattr(self, 'vessel_identity_length_scale', 1.0) or 1.0)
-        ident = sample_identity(np.random.default_rng(), data)
+        # 可复现性：用受控种子（从已播种的全局 RNG 取），避免 default_rng() 的无种子随机
+        ident = sample_identity(np.random.default_rng(int(np.random.randint(0, 2 ** 31 - 1))), data)
         d = derive(ident, scene)
         self.dynamic_obstacle_min_size = d['radius_km'] * 0.9
         self.dynamic_obstacle_max_size = d['radius_km'] * 1.1
