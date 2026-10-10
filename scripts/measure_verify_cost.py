@@ -5,7 +5,7 @@ from pathlib import Path
 ROOT = Path(r"D:\DSH_USV_Learning\USV_COLREGS")
 sys.path.insert(0, str(ROOT)); sys.path.insert(0, str(ROOT / "scripts"))
 from measure_encounter_density import build
-for cfg in ["SPEED_VERIFY40.txt", "SPEED_VERIFY20.txt"]:
+for cfg in ["V6_A2_S1.txt", "TIMING_NOVERIFY.txt"]:
     env = build(ROOT / cfg)
     steps = int(getattr(env, "cfg", {}).get("encounter_verify_steps", 0))
     tries = int(getattr(env, "cfg", {}).get("encounter_verify_max_tries", 0))

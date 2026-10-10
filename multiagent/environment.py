@@ -147,6 +147,8 @@ class MultiAgentEnv(gym.Env):
             self.last_step_timing['env_world_step'] = float(time.perf_counter() - world_start)
             self.last_step_timing.update(getattr(self.world, 'last_step_timing', {}))
 
+        # 验证期只关心几何：跳过观测/奖励/终止/info 构造（不改动力学）
+        _fast = bool(getattr(self.world, '_fast_verify_rollout', False))
         # record observation for each agent
         observation_start = time.perf_counter() if self.profile_timing else None
         benchmark_rows = []
@@ -163,7 +165,8 @@ class MultiAgentEnv(gym.Env):
         # 观测是 SAC 的直接输入，出现 NaN/Inf 时应立即暴露数据源，而
         # 不是用 nan_to_num 静默改写状态。错误信息包含 agent 和索引，
         # 便于定位具体的场景实体或动作链字段。
-        self._validate_observations(obs_n, stage='step')
+        if not _fast:
+            self._validate_observations(obs_n, stage='step')
             
         # update landmark_estimation size vased on covariance matrix
         for i in range(int(len(self.world.landmarks)/2)):
@@ -171,6 +174,8 @@ class MultiAgentEnv(gym.Env):
         self._reset_render() # we need to reset the render, ifnot the changes made in landmark.size doesn't appears
 
         info_start = time.perf_counter() if self.profile_timing else None
+        if _fast:
+            return obs_n, reward_n, done_n, np.zeros((len(self.agents), 4), dtype=np.float32)
         info_n = np.stack([
             pack_agent_info(
                 agent,

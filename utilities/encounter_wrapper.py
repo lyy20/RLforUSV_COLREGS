@@ -93,7 +93,9 @@ class EncounterResetWrapper(object):
             obs.append({'o': o, 'ra': getattr(o, 'ra', None), 'u': getattr(o, 'obstacle_vel', None),
                         'mode': getattr(o, 'encounter_motion_mode', None),
                         'ms': getattr(o, 'encounter_mode_state', None)})
-        return {'ents': ents, 'obs': obs, 't': getattr(self, '_t', 0)}
+        return {'ents': ents, 'obs': obs, 't': getattr(self, '_t', 0),
+                'step_count': int(getattr(world, 'step_count', 0)),
+                'rng': np.random.get_state()}
 
     def _restore_world(self, snap):
         if not snap:
@@ -120,6 +122,14 @@ class EncounterResetWrapper(object):
             if item['ms'] is not None:
                 o.encounter_mode_state = item['ms']
         self._t = snap.get('t', getattr(self, '_t', 0))
+        try:
+            world = getattr(self.env, 'world', None)
+            if world is not None and 'step_count' in snap:
+                world.step_count = int(snap['step_count'])
+            if 'rng' in snap:
+                np.random.set_state(snap['rng'])
+        except Exception:
+            pass
 
     def _extrapolated_cpa(self, world):
         agent = world.agents[0]
@@ -149,6 +159,12 @@ class EncounterResetWrapper(object):
         if world is None or steps <= 0:
             return True
         snap = self._snapshot_world()
+        world = getattr(self.env, 'world', None)
+        try:
+            if bool(self.cfg.get('encounter_verify_fast', True)):
+                world._fast_verify_rollout = True
+        except Exception:
+            pass
         for _ in range(steps):
             own = world.agents[0]
             tgt = world.landmarks[0]
@@ -175,6 +191,10 @@ class EncounterResetWrapper(object):
             if val > max(design * tol_rel + tol_abs, ceiling):
                 ok = False
                 break
+        try:
+            world._fast_verify_rollout = False
+        except Exception:
+            pass
         self._restore_world(snap)
         return ok
 
