@@ -1,0 +1,217 @@
+[hyperparam]
+
+# Fresh 3-DOF body-frame experiment. Old checkpoints are intentionally incompatible.
+TRAINING_RUN_NAME = BENCH_V6_16
+SCENARIO_PROFILE = ENTITY_ENCODER_0911
+OBSERVATION_LAYOUT = 3dof_body_frame_v2_action_state
+CURRICULUM_STAGE = 1
+SCENARIO = usv_tracking_base
+control_model = usv_3dof
+
+BUFFER_SIZE = 1000000
+BATCH_SIZE = 256
+RESUME_OVERRIDE_BATCH_SIZE = True
+GAMMA = 0.995
+TAU = 0.005
+LR_ACTOR = 3e-4
+LR_CRITIC = 3e-4
+LR_ALPHA = 3e-4
+WEIGHT_DECAY = 0
+UPDATE_EVERY = 1
+# Preserve the collection interval, then perform 16 gradient updates per group.
+UPDATE_TIMES = 16
+SEED = 1
+number_of_episodes = 60
+episode_length = 600
+noise = 1.0
+noise_reduction = 1.0
+PRE_TRAINED = false
+EXP_REP_BUF = false
+START_STEPS = 0
+START_POLICY = random
+
+parallel_envs = 16
+num_agents = 1
+num_landmarks = 1
+num_obstacles = 4
+num_static_obstacles = 10
+map_half_size = 1.500
+ob_range = 0.900
+num_ob = 4
+num_static_ob_slots = 4
+
+landmark_movable = True
+movement = escape
+landmark_vel = 1.6
+max_vel = 1.6
+obstacle_movable = True
+obstacle_movement = linear
+random_vel = False
+dynamic_obstacle_min_speed = 0.0012
+dynamic_obstacle_max_speed = 0.0022
+landmark_depth = 0.0
+
+pre_method = DIRECT
+target_observation_mode = direct_noisy
+target_position_noise_std = 0.001
+range_dropping = 0.0
+max_range = 0.900
+max_current_vel = 0.0001
+rew_err_th = 0.010
+rew_dis_th = 0.100
+
+agent_radius = 0.010
+target_radius = 0.010
+dynamic_obstacle_min_size = 0.004
+dynamic_obstacle_max_size = 0.008
+static_obstacle_min_size = 0.010
+static_obstacle_max_size = 0.020
+agent_target_spawn_margin = 0.020
+static_obstacle_clearance = 0.020
+vessel_static_clearance = 0.025
+vessel_vessel_spawn_clearance = 0.030
+static_obstacle_spawn_margin = 0.010
+dynamic_obstacle_spawn_margin = 0.015
+
+environment_dt = 1.0
+usv_3dof_dt = 0.1
+usv_max_surge_speed = 6.0
+usv_max_reverse_speed = 0.5
+usv_max_sway_speed = 1.0
+usv_max_thrust_rate = 80.0
+usv_max_rudder_angle_deg = 35.0
+usv_max_rudder_rate_deg_s = 20.0
+usv_max_yaw_rate_deg_s = 22.0
+action_smoothing_alpha = 0.35
+scripted_action_is_velocity = True
+motion_execution_safety_buffer = 0.005
+observation_velocity_scale = 0.012
+observation_boundary_risk_distance = 0.150
+timeout_termination_enabled = True
+
+colregs_risk_time_horizon = 180.0
+colregs_min_cpa_distance = 0.100
+colregs_safety_buffer = 0.030
+colregs_emergency_distance = 0.150
+geometric_avoidance_buffer = 0.020
+geometric_vessel_emergency_buffer = 0.030
+predictive_avoidance_time_horizon = 60.0
+predictive_vessel_buffer = 0.030
+boundary_turn_margin = 0.030
+dynamic_obstacle_max_turn_rate_deg_s = 1.0
+dynamic_obstacle_heading_noise_deg_s = 2.0
+dynamic_obstacle_max_accel_mps2 = 0.5
+
+# Reward weights are intentionally unchanged in this first core-logic run.
+REWARD_SUCCESS = 100.0
+REWARD_COLLISION = 150.0
+REWARD_OUT_OF_BOUNDS = 150.0
+REWARD_TIMEOUT = 25.0
+REWARD_PROGRESS_WEIGHT = 18.0
+# Weak normalized distance shaping: it no longer outweighs real progress.
+REWARD_RANGE_WEIGHT = 0.05
+# Keep near-obstacle awareness, while collision and COLREGs filtering remain hard safety mechanisms.
+REWARD_SAFETY_WEIGHT = 10.0
+REWARD_BOUNDARY_WEIGHT = 8.0
+REWARD_ACTION_SMOOTH_WEIGHT = 0.05
+# Lightweight physical-response penalties. Both use normalized 3-DOF states.
+REWARD_YAW_RATE_WEIGHT = 0.05
+REWARD_RUDDER_SMOOTH_WEIGHT = 0.10
+REWARD_INTERVENTION_ACTIVE_PENALTY = 0.02
+REWARD_INTERVENTION_MAGNITUDE_WEIGHT = 0.10
+REWARD_TIME_PENALTY = 0.05
+REWARD_SAFE_CLEARANCE = 0.030
+REWARD_BOUNDARY_SAFE_DISTANCE = 0.030
+
+DNN = MASAC
+ALPHA = 0.05
+AUTOMATIC_ENTROPY = True
+RNN = False
+HISTORY_LENGTH = 5
+DIM_1 = 128
+DIM_2 = 128
+ENTITY_ENCODER_ENABLED = True
+ENTITY_ENCODER_LATENT_DIM = 32
+ICM = False
+ICM_GAMMA = 0.5
+CTIP_active = False
+
+BENCHMARK = True
+RENDER = False
+PROGRESS_BAR = True
+REWARD_WINDOWS = 10000
+LANDMARK_ERROR_WINDOWS = 10000
+COLLISION_OUTWORLD_WINDOWS = 10000
+DEVICE = auto
+PROFILE_TRAINING = False
+TENSORBOARD_MAX_QUEUE = 100
+TENSORBOARD_FLUSH_SECS = 30
+POLICY_SAVE_INTERVAL = 100000
+TENSORBOARD_LOG_INTERVAL = 100000
+
+# Optional dual-batch COLREGs rule replay.  Keep this disabled for the
+# currently running 0826 experiment so its original training semantics and
+# checkpoint continuation remain unchanged.  New experiments may enable it.
+RULE_BUFFER_ENABLED = True
+RULE_BUFFER_SIZE = 100000
+RULE_BUFFER_MIN_SIZE = 1000
+RULE_ACTOR_BATCH_SIZE = 16
+RULE_SAMPLE_MODE = uniform
+RULE_IMITATION_WEIGHT = 0.05
+# 是否启用持久化 COLREGs 规则状态。默认关闭以保持 0904 旧实验行为。
+COLREGS_PERSISTENT_STATE_ENABLED = true
+# 风险消失后连续确认多少个环境步才释放持久化规则状态。
+COLREGS_PERSISTENT_EXIT_STEPS = 2
+COLREGS_PERSISTENT_ENTER_DCPA = 0.030
+COLREGS_PERSISTENT_ENTER_TCPA = 60.0
+COLREGS_PERSISTENT_EXIT_DCPA = 0.035
+COLREGS_PERSISTENT_EXIT_TCPA = 66.0
+COLREGS_PERSISTENT_MAX_HOLD_STEPS = 12
+
+# 可选 DAgger 教师聚合（默认关闭，保持历史实验兼容）
+DAGGER_ENABLED = false
+DAGGER_TEACHER_WEIGHT = 1.0
+DAGGER_NON_INTERVENTION_CONFIDENCE = 0.25
+RULE_REWARD_ENABLED = false
+RULE_ACTION_ALIGNMENT_WEIGHT = 0.0
+RULE_CPA_WEIGHT = 0.0
+RULE_OBLIGATION_PENALTY = 0.0
+
+encounter_generation_mode = 1
+encounter_tcpa_min_s = 60.0
+encounter_tcpa_max_s = 120.0
+encounter_dcpa_min_m = 10.0
+encounter_dcpa_max_m = 60.0
+encounter_accept_tcpa_max_s = 500.0
+encounter_accept_dcpa_max_m = 150.0
+encounter_max_resample = 200
+encounter_head_on_weight = 3.0
+encounter_crossing_weight = 2.4
+encounter_overtaking_weight = 0.6
+target_max_accel_mps2 = 0.5
+target_max_decel_mps2 = 0.5
+target_min_speed_mps = 1.2
+target_max_speed_mps = 2.2
+target_initial_speed_mps = 1.6
+vessel_identity_sampling_enabled = true
+vessel_identity_length_scale = 1.0
+usv_mass_surge_kg = 25.0
+usv_damping_surge = 5.0
+usv_damping_surge_quad = 1.5
+usv_max_thrust_n = 80.0
+world_velocity_damping = 0.02
+agent_nominal_speed_mps = 5.9
+target_motion_weight_stationary = 0.8
+target_motion_weight_constant = 1.2
+target_motion_weight_waypoints = 1.2
+target_motion_weight_escape = 1.2
+target_motion_weight_random = 1.2
+target_motion_weight_weaving = 1.0
+target_motion_weight_orbit = 0.8
+initial_heading_random = true
+encounter_verify_rollout = true
+encounter_verify_steps = 40
+encounter_verify_tol_rel = 2.0
+encounter_verify_tol_abs_m = 50.0
+encounter_verify_max_tries = 6
+encounter_target_hold_course = true

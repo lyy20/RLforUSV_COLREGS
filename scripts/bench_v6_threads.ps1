@@ -1,0 +1,12 @@
+$repo = 'D:\DSH_USV_Learning\USV_COLREGS'; Set-Location $repo
+$env:PYTHONIOENCODING = 'utf-8'
+$log = Join-Path $repo 'docs\bench_v6_threads.log'; Remove-Item $log -ErrorAction SilentlyContinue
+foreach ($n in 12,16,20,36) {
+  $left = (Get-CimInstance Win32_Process -Filter "Name='python.exe'" | Where-Object { $_.CommandLine -match 'main.py' } | Measure-Object).Count
+  if ($left -gt 0) { Start-Sleep -Seconds 5 }
+  $o = & 'D:\ANACONDA\Scripts\conda.exe' run --no-capture-output -n RLforUSV_L_T python main.py "BENCH_V6_$n.txt" 2>&1
+  $line = ($o | Select-String -Pattern '60/60' | Select-Object -Last 1)
+  "parallel_envs=$n : $line" | Tee-Object -FilePath $log -Append
+  Remove-Item -Recurse -Force "D:\USV\logs\BENCH_V6_$n" -ErrorAction SilentlyContinue
+}
+"BENCH DONE" | Tee-Object -FilePath $log -Append
