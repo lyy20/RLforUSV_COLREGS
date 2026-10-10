@@ -1,0 +1,43 @@
+{
+ "COST_Aoff_Boff.txt": {
+  "label": "最简单",
+  "M1_formation_rate": 1.0,
+  "M2_per_episode": 4.875,
+  "M3_types": {
+   "overtaking_give_way": 27,
+   "crossing_stand_on": 6,
+   "crossing_give_way": 6
+  },
+  "teacher_step_ratio": 0.5683377308707124,
+  "min_dist_median_m": 624.5703034137357,
+  "design_dcpa_median_m": 0.0
+ },
+ "COST_Aon_Boff.txt": {
+  "label": "+CPA反推",
+  "M1_formation_rate": 1.0,
+  "M2_per_episode": 8.0,
+  "M3_types": {
+   "overtaking_give_way": 18,
+   "head_on": 24,
+   "crossing_give_way": 8,
+   "crossing_stand_on": 14
+  },
+  "teacher_step_ratio": 0.6785,
+  "min_dist_median_m": 267.0940949908806,
+  "design_dcpa_median_m": 26.954495053773506
+ },
+ "COST_Aon_Bon.txt": {
+  "label": "+CPA反推+筛选",
+  "M1_formation_rate": 1.0,
+  "M2_per_episode": 8.0,
+  "M3_types": {
+   "crossing_stand_on": 20,
+   "overtaking_give_way": 17,
+   "head_on": 17,
+   "crossing_give_way": 10
+  },
+  "teacher_step_ratio": 0.706,
+  "min_dist_median_m": 255.57267565366303,
+  "design_dcpa_median_m": 35.05222554979197
+ }
+}
