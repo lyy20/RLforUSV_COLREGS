@@ -15,12 +15,14 @@ from measure_encounter_density import build
 CFG = sys.argv[1] if len(sys.argv) > 1 else "SAC_3DOF_ENTITY_ENCODER_0911_DENSE_REAL_V4.txt"
 EPISODES = int(sys.argv[2]) if len(sys.argv) > 2 else 60
 MAX_STEPS = int(sys.argv[3]) if len(sys.argv) > 3 else 600
+ACTION_MODE = sys.argv[4] if len(sys.argv) > 4 else "zero"  # zero | cruise
 env = build(ROOT / CFG)
 rows = []
 for ep in range(EPISODES):
     env.reset()
     w = env.world
     own = w.agents[0]
+    tgt = w.landmarks[0]
     ps = np.asarray(own.state.p_pos, dtype=float)[:2]
     vs = np.asarray(own.state.p_vel, dtype=float)[:2]
     marked = [(i, o) for i, o in enumerate(list(getattr(w, "obstacles", []) or []))
@@ -31,7 +33,12 @@ for ep in range(EPISODES):
     for i, o in marked:
         po = np.asarray(o.state.p_pos, dtype=float)[:2]
         vo = np.asarray(o.state.p_vel, dtype=float)[:2]
-        r = po - ps; v = vo - vs
+        # 与生成器同假设：本船名义速度 = 指向目标方向 x agent_nominal_speed
+        to_t = np.asarray(tgt.state.p_pos, dtype=float)[:2] - ps
+        n_t = float(np.linalg.norm(to_t))
+        u_nom = float(getattr(w, "agent_nominal_speed", 0.001))
+        v_s_nom = (to_t / n_t * u_nom) if n_t > 1e-9 else np.zeros(2)
+        r = po - ps; v = vo - v_s_nom
         vv = float(np.dot(v, v))
         if vv <= 1e-16:
             continue
@@ -43,7 +50,20 @@ for ep in range(EPISODES):
     for t in range(MAX_STEPS):
         done = False
         try:
-            _, _, dones, _ = env.step(np.zeros((1, 2)))
+            if ACTION_MODE == "pursuit":   # pursuit: 朝目标转向 + 满推力（与生成器假设一致）
+                ps_now = np.asarray(own.state.p_pos, dtype=float)[:2]
+                pt_now = np.asarray(tgt.state.p_pos, dtype=float)[:2]
+                v_now = np.asarray(own.state.p_vel, dtype=float)[:2]
+                psi_now = math.atan2(float(v_now[1]), float(v_now[0])) if float(np.linalg.norm(v_now)) > 1e-9 else 0.0
+                des = pt_now - ps_now
+                brg = math.atan2(float(des[1]), float(des[0]))
+                err = (brg - psi_now + math.pi) % (2 * math.pi) - math.pi
+                act = np.array([[1.0, float(np.clip(2.0 * err, -1.0, 1.0))]])
+            elif ACTION_MODE == "cruise":
+                act = np.array([[1.0, 0.0]])
+            else:
+                act = np.zeros((1, 2))
+            _, _, dones, _ = env.step(act)
             done = bool(np.any(dones))
         except Exception:
             break
@@ -66,7 +86,7 @@ import statistics as st
 def med(v):
     v = [x for x in v if x == x]
     return st.median(v) if v else float("nan")
-print("episodes=%d  pairs=%d  (config=%s)" % (EPISODES, len(rows), CFG))
+print("episodes=%d  pairs=%d  action=%s  (config=%s)" % (EPISODES, len(rows), ACTION_MODE, CFG))
 print("  设计 DCPA 中位 = %.1f m   (区间应为 10-60)" % (med([r["des_dcpa"] * 1000 for r in rows])))
 print("  设计 TCPA 中位 = %.1f s   (区间应为 60-120)" % med([r["des_tcpa"] for r in rows]))
 print("  实际最小距离中位 = %.1f m" % med([r["min_d"] * 1000 for r in rows]))

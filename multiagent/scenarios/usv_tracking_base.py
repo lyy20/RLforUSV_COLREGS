@@ -1150,6 +1150,32 @@ class Scenario(BaseScenario):
         world.scenario_profile = str(scenario_profile)
         world.environment_config = dict(environment_config)
 
+        # 3DOF 物理能力与世界阻尼（默认值=现状）
+        try:
+            from dataclasses import replace as _dc_replace
+            from dynamics import USV3DOFConfig, USV3DOFModel
+            _dyn = dict(
+                mass_surge=float(environment_config.get('usv_mass_surge_kg', world.usv_3dof_config.mass_surge)),
+                damping_surge=float(environment_config.get('usv_damping_surge', world.usv_3dof_config.damping_surge)),
+                damping_surge_quad=float(environment_config.get('usv_damping_surge_quad', world.usv_3dof_config.damping_surge_quad)),
+                max_thrust=float(environment_config.get('usv_max_thrust_n', world.usv_3dof_config.max_thrust)),
+                max_surge_speed=float(environment_config.get('usv_max_surge_speed', world.usv_3dof_config.max_surge_speed)),
+            )
+            world.usv_3dof_config = _dc_replace(world.usv_3dof_config, **_dyn)
+            world.usv_3dof_model = USV3DOFModel(world.usv_3dof_config)
+            # PROPAGATE_USV3DOF: 已存在的 agent 状态也要换模型
+            for _ag in list(getattr(world, 'agents', []) or []) + list(getattr(world, 'policy_agents', []) or []):
+                _st = getattr(getattr(_ag, 'state', None), 'usv_3dof', None)
+                _mdl = getattr(_st, 'model', None)
+                if _mdl is not None:
+                    try:
+                        _st.model = USV3DOFModel(_dc_replace(_mdl.config, **_dyn))
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+        world.damping = float(environment_config.get('world_velocity_damping', getattr(world, 'damping', 0.25)))
+
         # filter switch from environment_config（训练期可关；评估脚本仍可逐回合覆盖）
         world.agent_colregs_action_filter_enabled = bool(
             environment_config.get('agent_colregs_action_filter_enabled', True)
@@ -1208,7 +1234,7 @@ class Scenario(BaseScenario):
         world.agent_colregs_action_filter = COLREGsActionSetFilter(COLREGsActionSetConfig(
             emergency_distance=environment_config['colregs_emergency_distance'],
         ))
-        world.agent_nominal_speed = 0.001
+        world.agent_nominal_speed = float(environment_config.get('agent_nominal_speed_mps', 1.0)) / 1000.0
         world.heading_rate_gain = 0.3
         world.astar_heading_rate_gain = 1.0
         world.ocean_current_enabled = True

@@ -92,6 +92,15 @@ DEFAULT_ENVIRONMENT_CONFIG = {
     # 动态船多身份抽样（默认关闭；开启后按 configs/vessel_identities.json 的权重抽样）
     "vessel_identity_sampling_enabled": False,
     "vessel_identity_length_scale": 1.0,
+    # ===== 3DOF 物理能力（默认值=历史行为；改这些才真正改变速度上限） =====
+    "usv_mass_surge_kg": 25.0,
+    "usv_damping_surge": 18.0,
+    "usv_damping_surge_quad": 6.0,
+    "usv_max_thrust_n": 80.0,
+    # 世界层每步速度乘性衰减（core.py 原本硬编码 0.25）
+    "world_velocity_damping": 0.25,
+    # 会遇生成器假设的本船巡航速度（m/s）。必须与实际能力一致，否则设计 CPA 不成立
+    "agent_nominal_speed_mps": 1.0,
 }
 
 BOOLEAN_ENVIRONMENT_KEYS = {
