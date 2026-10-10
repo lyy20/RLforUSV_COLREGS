@@ -171,7 +171,11 @@ utilities/                      buffer / rule_replay_buffer / encounter_wrapper 
 evaluation/                     colregs_event_audit / test_terminal_report / joint_report
 configs/                        vessel_identities.json / parameter_conflict_registry.json
 docs/plan/                      规划与方法学文档（见下）
+docs/plan/服务器选型与Linux迁移.md  服务器比价 + 成本模型 + Linux 迁移清单（租服务器看这份）
+requirements-linux.txt          Linux 训练依赖（版本由服务器端 pip freeze 锁定）
 scripts/                        自检与验收脚本
+scripts/server_bootstrap.sh     服务器一键部署 + 冒烟 + 环境快照
+scripts/bench_server.sh         服务器标定：并发进程数 × workers 的真实吞吐与峰值显存
 ```
 
 ## 7. 环境与学习契约

@@ -1,0 +1,20 @@
+# Linux 训练依赖（仓库原本没有 requirements.txt）
+# 版本策略：此文件不锁版本 —— 服务器端 server_bootstrap.sh 会先装、再 pip freeze 落盘
+#           成 requirements-lock.txt，那份才是可复现的真凭据（避免我凭空编版本号）。
+numpy
+torch
+gym
+matplotlib
+tensorboardX
+tensorboard
+imageio
+imageio-ffmpeg
+pyglet
+Pillow
+opencv-python-headless
+bitarray
+cloudpickle
+six
+tqdm
+requests
+PyYAML
