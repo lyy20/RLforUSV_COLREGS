@@ -1,10 +1,27 @@
 # =============================================================================
 # 正式实验 第一阶段（筛选）：臂 A1 / seed 2
-# 臂含义：仅安全层（有过滤器、无规则模仿）—— 借来的合规基线
+# 臂含义：仅安全层（无规则模仿）
+# -----------------------------------------------------------------------------
+# 本版基准 = 静态目标 + 400 步 + 关筛选（依据 docs/plan/静态目标方案评估.md）
+#   目标：movement=linear, landmark_vel=0, max_vel=0（静止）
+#   步长：400（静态下界 236 s，p90 356 s，+余量；实测 0.99 s/回合，教师 14.24%%）
+#   筛选：encounter_verify_rollout=false（单位算力教师信号低 1.6×，不划算）
+#   生成：encounter_generation_mode=1（会遇 4.88→8.00/回合，对遇 0→24）
+# 本实验差异项：
+#   agent_colregs_action_filter_enabled = true
+#   RULE_BUFFER_ENABLED = False
+#   RULE_IMITATION_WEIGHT = 0.05
+# 并发：parallel_envs=36（单跑）
+# 冻结清单：docs/plan/环境层声明与冻结.md ｜ 矩阵：docs/plan/正式实验矩阵.md
+# =============================================================================
+# =============================================================================
+# 正式实验 第一阶段（筛选）：臂 A2 / seed 1
+# 臂含义：安全层 + 规则模仿（主臂）
 # -----------------------------------------------------------------------------
 # 本实验的差异项（与冻结基准 SAC_3DOF_ENTITY_ENCODER_0911_V6.txt 相比）：
 #   agent_colregs_action_filter_enabled = true    # 安全层开启
-#   RULE_BUFFER_ENABLED = False                      # 无规则模仿
+#   RULE_BUFFER_ENABLED = True                       # 规则模仿开启
+#   RULE_IMITATION_WEIGHT = 0.05                     # 主臂权重
 # 其余全部冻结（物理能力 / 观测槽 4-4 / 会遇生成 / 7 种目标运动 / 随机朝向）
 # 冻结清单：docs/plan/环境层声明与冻结.md
 # 矩阵与判据：docs/plan/正式实验矩阵.md
@@ -36,7 +53,7 @@ UPDATE_EVERY = 1
 UPDATE_TIMES = 16
 SEED = 2
 number_of_episodes = 100000
-episode_length = 600
+episode_length = 400
 noise = 1.0
 noise_reduction = 1.0
 PRE_TRAINED = false
@@ -55,12 +72,12 @@ num_ob = 4
 num_static_ob_slots = 4
 
 landmark_movable = True
-movement = escape
-landmark_vel = 1.6
-max_vel = 1.6
+movement = linear
+landmark_vel = 0.0
+max_vel = 0.0
 obstacle_movable = True
 obstacle_movement = linear
-random_vel = False
+random_vel = false
 dynamic_obstacle_min_speed = 0.0012
 dynamic_obstacle_max_speed = 0.0022
 landmark_depth = 0.0
@@ -204,9 +221,9 @@ encounter_crossing_weight = 2.4
 encounter_overtaking_weight = 0.6
 target_max_accel_mps2 = 0.5
 target_max_decel_mps2 = 0.5
-target_min_speed_mps = 1.2
-target_max_speed_mps = 2.2
-target_initial_speed_mps = 1.6
+target_min_speed_mps = 0.0
+target_max_speed_mps = 0.0
+target_initial_speed_mps = 0.0
 vessel_identity_sampling_enabled = true
 vessel_identity_length_scale = 1.0
 usv_mass_surge_kg = 25.0
@@ -223,7 +240,7 @@ target_motion_weight_random = 1.2
 target_motion_weight_weaving = 1.0
 target_motion_weight_orbit = 0.8
 initial_heading_random = true
-encounter_verify_rollout = true
+encounter_verify_rollout = false
 encounter_verify_steps = 40
 encounter_verify_tol_rel = 2.0
 encounter_verify_tol_abs_m = 50.0
