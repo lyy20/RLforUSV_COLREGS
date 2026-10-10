@@ -74,6 +74,36 @@ class EncounterResetWrapper(object):
             return None
         return p_o, psi_o, u_o
 
+    # --- motion authority ------------------------------------------------------
+    def _enforce_encounter_motion(self):
+        """把被标记的会遇船速度写回设计值（场景的逐帧指令会覆盖它）。
+
+        注意：这里只负责「保持设计速度」，运动方式（静止/逃逸/航点/随机/蛇形/绕行）
+        后续在此处按 mode 扩展。
+        """
+        world = getattr(self.env, 'world', None)
+        if world is None:
+            return
+        n_ob = int(getattr(world, 'num_obstacles', 0))
+        for i in range(max(n_ob, 0)):
+            ob = world.obstacles[i]
+            if not getattr(ob, 'encounter_generated', False):
+                continue
+            mode = getattr(ob, 'encounter_motion_mode', 'constant')
+            if mode == 'stationary':
+                ob.state.p_vel = np.zeros(2)
+                continue
+            psi = float(getattr(ob, 'ra', 0.0))
+            u = float(getattr(ob, 'obstacle_vel', 0.0))
+            if u > 0.0:
+                ob.state.p_vel = np.array([np.cos(psi), np.sin(psi)]) * u
+
+    def step(self, action):
+        out = self.env.step(action)
+        self._enforce_encounter_motion()
+        return out
+
+
     # --- env interface ---------------------------------------------------------
     def reset(self, **kwargs):
         out = self.env.reset(**kwargs)
