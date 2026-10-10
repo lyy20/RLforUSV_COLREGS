@@ -1,0 +1,30 @@
+{
+ "动态目标(逃逸)": {
+  "episodes": 10,
+  "start_dist_median_m": 1930.791192635074,
+  "capture_steps_median": null,
+  "capture_rate": 0.0,
+  "M2_per_episode": 8.0,
+  "teacher_step_ratio": 0.7145853193517636,
+  "types": {
+   "overtaking_give_way": 24,
+   "head_on": 12,
+   "crossing_give_way": 23,
+   "crossing_stand_on": 21
+  }
+ },
+ "静态目标": {
+  "episodes": 10,
+  "start_dist_median_m": 1390.7413398672795,
+  "capture_steps_median": null,
+  "capture_rate": 0.0,
+  "M2_per_episode": 8.0,
+  "teacher_step_ratio": 0.7391154111955771,
+  "types": {
+   "crossing_give_way": 23,
+   "overtaking_give_way": 26,
+   "crossing_stand_on": 20,
+   "head_on": 11
+  }
+ }
+}
