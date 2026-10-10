@@ -323,12 +323,19 @@ class EncounterResetWrapper(object):
     def reset(self, **kwargs):
         out = self.env.reset(**kwargs)
         self._t = 0
+        self.verify_attempts = 0
+        self.verify_accepts = 0
+        self.verify_first_try_accepts = 0
         self._randomize_initial_heading()
         self.relocate()
         if bool(self.cfg.get('encounter_verify_rollout', False)):
             tries = int(self.cfg.get('encounter_verify_max_tries', 6))
             for _k in range(max(tries, 1)):
+                self.verify_attempts += 1
                 if self._verify_placement():
+                    self.verify_accepts += 1
+                    if _k == 0:
+                        self.verify_first_try_accepts += 1
                     break
                 self.relocate()
         self._assign_motion_modes()
