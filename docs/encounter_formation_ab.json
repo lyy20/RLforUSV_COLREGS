@@ -1,0 +1,24 @@
+{
+ "BASELINE_NO_ENCOUNTER_V6.txt": {
+  "episodes": 8,
+  "M1_formation_rate": 1.0,
+  "M2_formations_per_episode": 2.25,
+  "M3_types": {
+   "crossing_give_way": 8,
+   "crossing_stand_on": 2,
+   "head_on": 2,
+   "overtaking_give_way": 6
+  }
+ },
+ "SAC_3DOF_ENTITY_ENCODER_0911_V6.txt": {
+  "episodes": 8,
+  "M1_formation_rate": 1.0,
+  "M2_formations_per_episode": 4.0,
+  "M3_types": {
+   "overtaking_give_way": 14,
+   "crossing_stand_on": 9,
+   "crossing_give_way": 7,
+   "head_on": 2
+  }
+ }
+}
