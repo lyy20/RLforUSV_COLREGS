@@ -5,7 +5,7 @@
   "sources": {
    "colav_models": "_refs/colav-simulator/colav_simulator/core/models.py",
    "imo_msc137": "IMO MSC.137(76): advance<=4.5L, tactical diameter<=5L, stop<=15L, 10/10 zigzag overshoot<=10~20deg",
-   "solas_steering": "SOLAS II-1/29.3.2: rudder 35deg->35deg <=28 s (=2.5 deg/s); 原文待逐字核对",
+   "solas_steering": "46 CFR 58.25-10(c)(2) / SOLAS II-1/29.3.2: 35° one side to 30° other side <= 28 s (=2.32 deg/s), at deepest draft & max ahead service speed (verbatim fetched 2026-10-10)",
    "ais_2022": "Moss/Horten 2022, 196 identified encounters (repo script)",
    "colav_maxrudder": "colav-simulator models.py:281 max_rudder_angle=35deg"
   }
@@ -104,7 +104,7 @@
  "derivation": {
   "k_index": "K = r_ss / rudder_max, r_ss = 2*v/(5L) (IMO tactical diameter <=5L)",
   "yaw_accel": "r_dot_max = K * rudder_rate",
-  "rudder_rate_solas": "2.5 deg/s (SOLAS 35->35 in 28 s) for L>=50m; small craft 10-30 deg/s (grade C/D)",
+  "rudder_rate_solas": "2.32 deg/s (65 deg travel / 28 s) for L>=50 m; small craft 10-30 deg/s (grade C/D)",
   "imo_checks": [
    "advance <= 4.5L",
    "tactical diameter <= 5L",

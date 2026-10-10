@@ -22,7 +22,7 @@ def load_identities(path=None) -> dict:
 
 def _rudder_rate_for(length_m: float) -> float:
     """舵速：>=50 m 用 SOLAS 35°→35°/28 s ≈ 2.5 °/s；小艇取 15 °/s（C 级，待补引用）。"""
-    return 2.5 if float(length_m) >= 50.0 else 15.0
+    return 2.32 if float(length_m) >= 50.0 else 15.0
 
 
 def _accel_for(identity: dict) -> float:
