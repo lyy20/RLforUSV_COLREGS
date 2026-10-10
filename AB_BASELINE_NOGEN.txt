@@ -1,7 +1,7 @@
 [hyperparam]
 
 # Fresh 3-DOF body-frame experiment. Old checkpoints are intentionally incompatible.
-TRAINING_RUN_NAME = SAC_3DOF_BODY_FRAME_ENTITY_ENCODER_0911_V6
+TRAINING_RUN_NAME = AB_BASELINE_NOGEN
 SCENARIO_PROFILE = ENTITY_ENCODER_0911
 OBSERVATION_LAYOUT = 3dof_body_frame_v2_action_state
 CURRICULUM_STAGE = 1
@@ -21,7 +21,7 @@ UPDATE_EVERY = 1
 # Preserve the collection interval, then perform 16 gradient updates per group.
 UPDATE_TIMES = 16
 SEED = 1
-number_of_episodes = 1200000
+number_of_episodes = 400
 episode_length = 600
 noise = 1.0
 noise_reduction = 1.0
@@ -146,8 +146,8 @@ DEVICE = auto
 PROFILE_TRAINING = False
 TENSORBOARD_MAX_QUEUE = 100
 TENSORBOARD_FLUSH_SECS = 30
-POLICY_SAVE_INTERVAL = 1000
-TENSORBOARD_LOG_INTERVAL = 500
+POLICY_SAVE_INTERVAL = 100000
+TENSORBOARD_LOG_INTERVAL = 100
 
 # Optional dual-batch COLREGs rule replay.  Keep this disabled for the
 # currently running 0826 experiment so its original training semantics and
@@ -177,7 +177,7 @@ RULE_ACTION_ALIGNMENT_WEIGHT = 0.0
 RULE_CPA_WEIGHT = 0.0
 RULE_OBLIGATION_PENALTY = 0.0
 
-encounter_generation_mode = 1
+encounter_generation_mode = 0
 encounter_tcpa_min_s = 60.0
 encounter_tcpa_max_s = 120.0
 encounter_dcpa_min_m = 10.0
@@ -185,7 +185,7 @@ encounter_dcpa_max_m = 60.0
 encounter_accept_tcpa_max_s = 500.0
 encounter_accept_dcpa_max_m = 150.0
 encounter_max_resample = 200
-encounter_head_on_weight = 3.0
+encounter_head_on_weight = 1.5
 encounter_crossing_weight = 2.4
 encounter_overtaking_weight = 0.6
 target_max_accel_mps2 = 0.5
@@ -209,7 +209,7 @@ target_motion_weight_random = 1.2
 target_motion_weight_weaving = 1.0
 target_motion_weight_orbit = 0.8
 initial_heading_random = true
-encounter_verify_rollout = true
+encounter_verify_rollout = false
 encounter_verify_steps = 40
 encounter_verify_tol_rel = 2.0
 encounter_verify_tol_abs_m = 50.0

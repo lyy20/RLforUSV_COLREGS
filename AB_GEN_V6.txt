@@ -1,7 +1,7 @@
 [hyperparam]
 
 # Fresh 3-DOF body-frame experiment. Old checkpoints are intentionally incompatible.
-TRAINING_RUN_NAME = SAC_3DOF_BODY_FRAME_ENTITY_ENCODER_0911_V6
+TRAINING_RUN_NAME = AB_GEN_V6
 SCENARIO_PROFILE = ENTITY_ENCODER_0911
 OBSERVATION_LAYOUT = 3dof_body_frame_v2_action_state
 CURRICULUM_STAGE = 1
@@ -21,7 +21,7 @@ UPDATE_EVERY = 1
 # Preserve the collection interval, then perform 16 gradient updates per group.
 UPDATE_TIMES = 16
 SEED = 1
-number_of_episodes = 1200000
+number_of_episodes = 400
 episode_length = 600
 noise = 1.0
 noise_reduction = 1.0
@@ -146,8 +146,8 @@ DEVICE = auto
 PROFILE_TRAINING = False
 TENSORBOARD_MAX_QUEUE = 100
 TENSORBOARD_FLUSH_SECS = 30
-POLICY_SAVE_INTERVAL = 1000
-TENSORBOARD_LOG_INTERVAL = 500
+POLICY_SAVE_INTERVAL = 100000
+TENSORBOARD_LOG_INTERVAL = 100
 
 # Optional dual-batch COLREGs rule replay.  Keep this disabled for the
 # currently running 0826 experiment so its original training semantics and
