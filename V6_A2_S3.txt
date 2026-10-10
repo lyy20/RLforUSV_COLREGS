@@ -2,16 +2,16 @@
 # 正式实验 第一阶段（筛选）：臂 A2 / seed 3
 # 臂含义：安全层 + 规则模仿（主臂）
 # -----------------------------------------------------------------------------
-# 本版基准 = 静态目标 + 400 步 + 关筛选（依据 docs/plan/静态目标方案评估.md）
+# 基准 = 静态目标 + 400 步 + 关筛选（依据 docs/plan/静态目标方案评估.md）
 #   目标：movement=linear, landmark_vel=0, max_vel=0（静止）
-#   步长：400（静态下界 236 s，p90 356 s，+余量；实测 0.99 s/回合，教师 14.24%%）
-#   筛选：encounter_verify_rollout=false（单位算力教师信号低 1.6×，不划算）
+#   步长：400（静态下界 236 s / p90 356 s；实测 0.99 s/回合，教师 14.24%%）
+#   筛选：encounter_verify_rollout=false（单位算力教师信号低 1.6×）
 #   生成：encounter_generation_mode=1（会遇 4.88→8.00/回合，对遇 0→24）
+# 默认并发版：parallel_envs=18（两进程同时跑；单跑亦可，单跑可改 36 提速）
 # 本实验差异项：
 #   agent_colregs_action_filter_enabled = true
 #   RULE_BUFFER_ENABLED = True
 #   RULE_IMITATION_WEIGHT = 0.05
-# 并发：parallel_envs=36（单跑）
 # 冻结清单：docs/plan/环境层声明与冻结.md ｜ 矩阵：docs/plan/正式实验矩阵.md
 # =============================================================================
 # =============================================================================
@@ -61,7 +61,7 @@ EXP_REP_BUF = false
 START_STEPS = 0
 START_POLICY = random
 
-parallel_envs = 36
+parallel_envs = 18
 num_agents = 1
 num_landmarks = 1
 num_obstacles = 4
