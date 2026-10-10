@@ -1,7 +1,21 @@
+# =============================================================================
+# 正式实验 第一阶段（筛选）：臂 A0 / seed 1
+# 臂含义：纯 SAC（无安全层、无规则模仿）—— 内部化上界对照
+# -----------------------------------------------------------------------------
+# 本实验的差异项（与冻结基准 SAC_3DOF_ENTITY_ENCODER_0911_V6.txt 相比）：
+#   agent_colregs_action_filter_enabled = false   # 安全层关闭
+#   RULE_BUFFER_ENABLED = False                      # 无规则模仿
+# 其余全部冻结（物理能力 / 观测槽 4-4 / 会遇生成 / 7 种目标运动 / 随机朝向）
+# 冻结清单：docs/plan/环境层声明与冻结.md
+# 矩阵与判据：docs/plan/正式实验矩阵.md
+# -----------------------------------------------------------------------------
+# 规模：100000 回合 | 保存间隔 5000 | TB 间隔 500
+# 验收判据：教师发声率 >=10%、loss 有限、出界率 <=5%
+# =============================================================================
 [hyperparam]
 
 # Fresh 3-DOF body-frame experiment. Old checkpoints are intentionally incompatible.
-TRAINING_RUN_NAME = SAC_3DOF_BODY_FRAME_ENTITY_ENCODER_0911_V6
+TRAINING_RUN_NAME = V6_A0_S1
 SCENARIO_PROFILE = ENTITY_ENCODER_0911
 OBSERVATION_LAYOUT = 3dof_body_frame_v2_action_state
 CURRICULUM_STAGE = 1
@@ -21,7 +35,7 @@ UPDATE_EVERY = 1
 # Preserve the collection interval, then perform 16 gradient updates per group.
 UPDATE_TIMES = 16
 SEED = 1
-number_of_episodes = 500000
+number_of_episodes = 100000
 episode_length = 600
 noise = 1.0
 noise_reduction = 1.0
@@ -146,13 +160,13 @@ DEVICE = auto
 PROFILE_TRAINING = False
 TENSORBOARD_MAX_QUEUE = 100
 TENSORBOARD_FLUSH_SECS = 30
-POLICY_SAVE_INTERVAL = 1000
+POLICY_SAVE_INTERVAL = 5000
 TENSORBOARD_LOG_INTERVAL = 500
 
 # Optional dual-batch COLREGs rule replay.  Keep this disabled for the
 # currently running 0826 experiment so its original training semantics and
 # checkpoint continuation remain unchanged.  New experiments may enable it.
-RULE_BUFFER_ENABLED = True
+RULE_BUFFER_ENABLED = False
 RULE_BUFFER_SIZE = 100000
 RULE_BUFFER_MIN_SIZE = 1000
 RULE_ACTOR_BATCH_SIZE = 16
@@ -215,3 +229,4 @@ encounter_verify_tol_rel = 2.0
 encounter_verify_tol_abs_m = 50.0
 encounter_verify_max_tries = 6
 encounter_target_hold_course = true
+agent_colregs_action_filter_enabled = false
