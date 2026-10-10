@@ -1,0 +1,154 @@
+{
+ "meta": {
+  "schema_version": 1,
+  "created": "2026-10-10",
+  "rule": "任何参数改动必须先在此登记：语义类别 + 来源 + 冲突判定；未登记者不得写入配置（check_parameter_registry.py 会拦）",
+  "semantics": [
+   "A_权威标准",
+   "B_实测数据",
+   "C_同行实现",
+   "D_任务设定"
+  ],
+  "conflict_kinds": [
+   "true_conflict",
+   "semantics_mismatch",
+   "scale_difference",
+   "none"
+  ]
+ },
+ "baseline": {
+  "chosen": "colav-simulator",
+  "reason": "键级可映射（scenario_generator.yaml 对应 encounter_*；models.py 对应 vessel identities）",
+  "source_files": [
+   "_refs/colav-simulator/config/scenario_generator.yaml",
+   "_refs/colav-simulator/colav_simulator/core/models.py"
+  ]
+ },
+ "entries": [
+  {
+   "id": 1,
+   "param": "d_cpa_threshold",
+   "ours": "encounter_accept_dcpa_max_m",
+   "colav": 150,
+   "other_sources": [
+    {
+     "src": "AIS_2022",
+     "value": "4.5-9.9 CPA/L"
+    }
+   ],
+   "kind": "semantics_mismatch",
+   "resolution": "采用 colav 绝对值 150 m；对 20 m 船 = 7.5L，落在 AIS 区间内（一致）"
+  },
+  {
+   "id": 2,
+   "param": "t_cpa_threshold",
+   "ours": "encounter_accept_tcpa_max_s",
+   "colav": 500,
+   "other_sources": [
+    {
+     "src": "rlmpc",
+     "value": "t_cpa_entry=120 s"
+    }
+   ],
+   "kind": "semantics_mismatch",
+   "resolution": "生成接受过滤=500 s（colav）；风险判定窗=180 s（我们）；语义分列，不混用"
+  },
+  {
+   "id": 3,
+   "param": "max_turn_rate",
+   "ours": "usv_max_yaw_rate_deg_s / dynamic_obstacle_max_turn_rate_deg_s",
+   "colav": "CSOG 4 deg/s; Viknes 15 deg/s",
+   "other_sources": [
+    {
+     "src": "IMO_MSC137",
+     "value": "2v/(5L) 能力下限"
+    }
+   ],
+   "kind": "semantics_mismatch",
+   "resolution": "饱和上限取实现值；能力下限取 IMO；本船取 20-25 deg/s（小艇区间）"
+  },
+  {
+   "id": 4,
+   "param": "rudder_rate",
+   "ours": "usv_max_rudder_rate_deg_s",
+   "colav": null,
+   "other_sources": [
+    {
+     "src": "SOLAS_46CFR58.25-10",
+     "value": "2.32 deg/s (>=50 m)"
+    }
+   ],
+   "kind": "scale_difference",
+   "resolution": "商船 2.32 deg/s；小艇 20 deg/s（C/D 级，声明无权威出处）"
+  },
+  {
+   "id": 5,
+   "param": "speed",
+   "ours": "usv_max_surge_speed / target_*_speed_mps",
+   "colav": "CSOG U_max 15 m/s; Viknes 10 m/s",
+   "other_sources": [
+    {
+     "src": "AIS_2022",
+     "value": "median 3.44 m/s"
+    }
+   ],
+   "kind": "semantics_mismatch",
+   "resolution": "采用 AIS 巡航量级（本船 3.0、他船 2.5-3.4 m/s）"
+  },
+  {
+   "id": 6,
+   "param": "sensor_range",
+   "ours": "ob_range / max_range",
+   "colav": "radar 2000 m; AIS 5000 m",
+   "other_sources": [
+    {
+     "src": "rlmpc",
+     "value": "activation 1000 m"
+    }
+   ],
+   "kind": "true_conflict",
+   "resolution": "用户裁定方案①：ob_range 300 -> 900 m，地图 2 -> 3 km，需重训"
+  },
+  {
+   "id": 7,
+   "param": "vessel_length",
+   "ours": "agent_radius / dynamic_obstacle_*_size",
+   "colav": "8.45-31.25 m",
+   "other_sources": [
+    {
+     "src": "AIS_2022",
+     "value": "median 113-144 m"
+    }
+   ],
+   "kind": "scale_difference",
+   "resolution": "主环境 20 m 级 USV；身份库覆盖 8.45-130 m 供抽样"
+  },
+  {
+   "id": 8,
+   "param": "map_and_episode",
+   "ours": "map_half_size / episode_length",
+   "colav": "5 km map, t_end 300 s",
+   "other_sources": [],
+   "kind": "none",
+   "resolution": "同量级；地图按方案① 提到 3 km；回合 600 s 保留"
+  },
+  {
+   "id": 9,
+   "param": "encounter_dist_range",
+   "ours": "由 TCPA x 闭合速度反推",
+   "colav": "dist_between_ships_range 150-800 m",
+   "other_sources": [],
+   "kind": "none",
+   "resolution": "我们的 360-720 m 落在 colav 区间内（交叉校验通过）"
+  },
+  {
+   "id": 10,
+   "param": "encounter_bearing_course",
+   "ours": "由 DCPA/TCPA 生成（隐式）",
+   "colav": "HO +-3/+-5 deg; OT +-20/+-15 deg; CR 10.1-90.5/+-10 deg",
+   "other_sources": [],
+   "kind": "none",
+   "resolution": "作为【生成后校验】使用：check_encounter_against_colav.py 检查生成会遇是否落在其范围内"
+  }
+ ]
+}
