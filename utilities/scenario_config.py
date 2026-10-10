@@ -101,6 +101,23 @@ DEFAULT_ENVIRONMENT_CONFIG = {
     "world_velocity_damping": 0.25,
     # 会遇生成器假设的本船巡航速度（m/s）。必须与实际能力一致，否则设计 CPA 不成立
     "agent_nominal_speed_mps": 1.0,
+    # ===== 目标运动方式权重（7 种，全覆盖）=====
+    "target_motion_weight_stationary": 0.8,
+    "target_motion_weight_constant": 1.2,
+    "target_motion_weight_waypoints": 1.2,
+    "target_motion_weight_escape": 1.2,
+    "target_motion_weight_random": 1.2,
+    "target_motion_weight_weaving": 1.0,
+    "target_motion_weight_orbit": 0.8,
+    # ===== 验证与朝向 =====
+    "initial_heading_random": True,
+    "encounter_verify_rollout": True,
+    "encounter_verify_steps": 40.0,
+    "encounter_verify_tol_rel": 2.0,
+    "encounter_verify_tol_abs_m": 50.0,
+    "encounter_verify_max_tries": 6.0,
+    # B：设计只承诺「初始几何 + 会遇确实形成」；CPA 上限是硬门
+    "encounter_verify_max_cpa_m": 300.0,
 }
 
 BOOLEAN_ENVIRONMENT_KEYS = {
@@ -112,6 +129,8 @@ BOOLEAN_ENVIRONMENT_KEYS = {
     "dagger_enabled",
     "agent_colregs_action_filter_enabled",
     "vessel_identity_sampling_enabled",
+    "initial_heading_random",
+    "encounter_verify_rollout",
 }
 
 

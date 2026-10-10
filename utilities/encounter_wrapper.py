@@ -74,6 +74,227 @@ class EncounterResetWrapper(object):
             return None
         return p_o, psi_o, u_o
 
+    # --- rollout verification (A) ----------------------------------------------
+    def _snapshot_world(self):
+        world = getattr(self.env, 'world', None)
+        if world is None:
+            return None
+        ents = []
+        for e in list(getattr(world, 'agents', []) or []) + list(getattr(world, 'landmarks', []) or []) + list(getattr(world, 'obstacles', []) or []) + list(getattr(world, 'static_obstacles', []) or []):
+            item = {'e': e,
+                    'pos': np.array(e.state.p_pos, float, copy=True),
+                    'vel': np.array(e.state.p_vel, float, copy=True)}
+            st = getattr(e.state, 'usv_3dof', None)
+            if st is not None:
+                item['st'] = dict(st.__dict__) if hasattr(st, '__dict__') else None
+            ents.append(item)
+        obs = []
+        for o in list(getattr(world, 'obstacles', []) or []):
+            obs.append({'o': o, 'ra': getattr(o, 'ra', None), 'u': getattr(o, 'obstacle_vel', None),
+                        'mode': getattr(o, 'encounter_motion_mode', None),
+                        'ms': getattr(o, 'encounter_mode_state', None)})
+        return {'ents': ents, 'obs': obs, 't': getattr(self, '_t', 0)}
+
+    def _restore_world(self, snap):
+        if not snap:
+            return
+        for item in snap['ents']:
+            e = item['e']
+            e.state.p_pos = np.array(item['pos'], float, copy=True)
+            e.state.p_vel = np.array(item['vel'], float, copy=True)
+            st = getattr(e.state, 'usv_3dof', None)
+            if st is not None and item.get('st'):
+                for k, v in item['st'].items():
+                    try:
+                        setattr(st, k, v)
+                    except Exception:
+                        pass
+        for item in snap['obs']:
+            o = item['o']
+            if item['ra'] is not None:
+                o.ra = item['ra']
+            if item['u'] is not None:
+                o.obstacle_vel = item['u']
+            if item['mode'] is not None:
+                o.encounter_motion_mode = item['mode']
+            if item['ms'] is not None:
+                o.encounter_mode_state = item['ms']
+        self._t = snap.get('t', getattr(self, '_t', 0))
+
+    def _extrapolated_cpa(self, world):
+        agent = world.agents[0]
+        ps = np.asarray(agent.state.p_pos, float)
+        vs = np.asarray(agent.state.p_vel, float)
+        out = {}
+        n_ob = int(getattr(world, 'num_obstacles', 0))
+        for i in range(max(n_ob, 0)):
+            ob = world.obstacles[i]
+            if not getattr(ob, 'encounter_generated', False):
+                continue
+            r = np.asarray(ob.state.p_pos, float) - ps
+            v = np.asarray(ob.state.p_vel, float) - vs
+            vv = float(np.dot(v, v))
+            if vv <= 1e-16:
+                out[i] = float(np.linalg.norm(r))
+            else:
+                t = max(0.0, -float(np.dot(r, v)) / vv)
+                out[i] = float(np.linalg.norm(r + v * t))
+        return out
+
+    def _verify_placement(self):
+        steps = int(self.cfg.get('encounter_verify_steps', 40))
+        tol_rel = float(self.cfg.get('encounter_verify_tol_rel', 2.0))
+        tol_abs = float(self.cfg.get('encounter_verify_tol_abs_m', 50.0)) / 1000.0
+        world = getattr(self.env, 'world', None)
+        if world is None or steps <= 0:
+            return True
+        snap = self._snapshot_world()
+        for _ in range(steps):
+            own = world.agents[0]
+            tgt = world.landmarks[0]
+            v_now = np.asarray(own.state.p_vel, float)
+            sp = float(np.linalg.norm(v_now))
+            psi = float(np.arctan2(v_now[1], v_now[0])) if sp > 1e-9 else 0.0
+            des = np.asarray(tgt.state.p_pos, float) - np.asarray(own.state.p_pos, float)
+            err = (float(np.arctan2(des[1], des[0])) - psi + np.pi) % (2 * np.pi) - np.pi
+            act = np.array([[1.0, float(np.clip(2.0 * err, -1.0, 1.0))]])
+            try:
+                self.env.step(act)
+            except Exception:
+                break
+            self._t += 1
+            self._enforce_encounter_motion()
+        cpa = self._extrapolated_cpa(world)
+        ok = True
+        for i, val in cpa.items():
+            ob = world.obstacles[i]
+            design = float(getattr(ob, 'encounter_design_dcpa', 0.0))
+            if design <= 0.0:
+                continue
+            ceiling = float(self.cfg.get('encounter_verify_max_cpa_m', 300.0)) / 1000.0
+            if val > max(design * tol_rel + tol_abs, ceiling):
+                ok = False
+                break
+        self._restore_world(snap)
+        return ok
+
+    # --- target motion modes ---------------------------------------------------
+    MODES = ('stationary', 'constant', 'waypoints', 'escape', 'random', 'weaving', 'orbit')
+
+    def _mode_weights(self):
+        raw = ''
+        try:
+            raw = ','.join('%s:%.3f' % (m, float(self.cfg.get('target_motion_weight_' + m, 1.0))) for m in self.MODES)
+        except Exception:
+            raw = ''
+        w = {}
+        for part in raw.split(','):
+            if ':' in part:
+                k, v = part.split(':', 1)
+                k = k.strip()
+                try:
+                    w[k] = max(float(v), 0.0)
+                except ValueError:
+                    pass
+        if not w:
+            w = {m: 1.0 for m in self.MODES}
+        return w
+
+    def _randomize_initial_heading(self):
+        if not bool(self.cfg.get('initial_heading_random', False)):
+            return
+        world = getattr(self.env, 'world', None)
+        if world is None or not getattr(world, 'agents', None):
+            return
+        agent = world.agents[0]
+        st = getattr(agent.state, 'usv_3dof', None)
+        psi = float(np.random.uniform(-np.pi, np.pi))
+        if st is not None and hasattr(st, 'psi'):
+            st.psi = psi
+            if hasattr(st, 'u'):
+                st.u = 0.0
+            if hasattr(st, 'v'):
+                st.v = 0.0
+            if hasattr(st, 'r'):
+                st.r = 0.0
+        agent.state.p_vel = np.zeros(2)
+
+    def _assign_motion_modes(self):
+        world = getattr(self.env, 'world', None)
+        if world is None:
+            return
+        n_ob = int(getattr(world, 'num_obstacles', 0))
+        w = self._mode_weights()
+        modes = [m for m in self.MODES if w.get(m, 0.0) > 0.0]
+        probs = np.array([w[m] for m in modes], dtype=float)
+        probs = probs / probs.sum()
+        half = float(self.cfg.get('map_half_size', 1.0))
+        base_u = float(self.cfg.get('dynamic_obstacle_min_speed', 0.0012))
+        max_u = float(self.cfg.get('dynamic_obstacle_max_speed', 0.0022))
+        for i in range(max(n_ob, 0)):
+            ob = world.obstacles[i]
+            if not getattr(ob, 'encounter_generated', False):
+                continue
+            mode = str(np.random.choice(modes, p=probs))
+            ob.encounter_motion_mode = mode
+            ob.obstacle_vel = float(np.clip(getattr(ob, 'obstacle_vel', base_u), base_u, max_u))
+            st = {'base_psi': float(getattr(ob, 'ra', 0.0)),
+                  'base_u': float(ob.obstacle_vel),
+                  'u_min': base_u, 'u_max': max_u,
+                  'omega': float(np.random.uniform(2.0, 6.0) * np.pi / 180.0) * (1.0 if np.random.rand() < 0.5 else -1.0),
+                  'amp': float(np.random.uniform(10.0, 30.0) * np.pi / 180.0),
+                  'period': float(np.random.uniform(15.0, 40.0)),
+                  'next_change': float(np.random.uniform(5.0, 20.0)),
+                  'wps': [], 'wp_i': 0}
+            for _ in range(2):
+                st['wps'].append(np.random.uniform(-half * 0.8, half * 0.8, size=2))
+            ob.encounter_mode_state = st
+
+    def _mode_velocity(self, ob, dt):
+        st = getattr(ob, 'encounter_mode_state', None) or {}
+        mode = getattr(ob, 'encounter_motion_mode', 'constant')
+        psi = float(getattr(ob, 'ra', 0.0))
+        u = float(getattr(ob, 'obstacle_vel', 0.0))
+        if mode == 'stationary':
+            return np.zeros(2)
+        if mode == 'constant':
+            return np.array([np.cos(psi), np.sin(psi)]) * u
+        if mode == 'weaving':
+            psi = st.get('base_psi', psi) + st.get('amp', 0.2) * np.sin(2.0 * np.pi * self._t * dt / max(st.get('period', 20.0), 1e-6))
+            return np.array([np.cos(psi), np.sin(psi)]) * u
+        if mode == 'orbit':
+            psi = st.get('base_psi', psi) + st.get('omega', 0.05) * self._t * dt
+            return np.array([np.cos(psi), np.sin(psi)]) * u
+        if mode == 'escape':
+            world = getattr(self.env, 'world', None)
+            own = world.agents[0] if world is not None and getattr(world, 'agents', None) else None
+            if own is not None:
+                d = np.asarray(ob.state.p_pos, float) - np.asarray(own.state.p_pos, float)
+                if float(np.linalg.norm(d)) > 1e-9:
+                    psi = float(np.arctan2(d[1], d[0]))
+            return np.array([np.cos(psi), np.sin(psi)]) * u
+        if mode == 'waypoints':
+            wps = st.get('wps') or []
+            if wps:
+                idx = int(st.get('wp_i', 0)) % len(wps)
+                d = np.asarray(wps[idx], float) - np.asarray(ob.state.p_pos, float)
+                if float(np.linalg.norm(d)) < 0.05:
+                    idx = (idx + 1) % len(wps)
+                    st['wp_i'] = idx
+                    d = np.asarray(wps[idx], float) - np.asarray(ob.state.p_pos, float)
+                if float(np.linalg.norm(d)) > 1e-9:
+                    psi = float(np.arctan2(d[1], d[0]))
+            return np.array([np.cos(psi), np.sin(psi)]) * u
+        if mode == 'random':
+            if self._t * dt >= float(st.get('next_change', 10.0)):
+                st['base_psi'] = st.get('base_psi', psi) + float(np.random.uniform(-0.7, 0.7))
+                st['base_u'] = float(np.clip(st.get('base_u', u) * float(np.random.uniform(0.7, 1.3)), st.get('u_min', 0.0012), st.get('u_max', 0.0022)))
+                st['next_change'] = self._t * dt + float(np.random.uniform(5.0, 20.0))
+                ob.obstacle_vel = float(st['base_u'])
+            psi = st.get('base_psi', psi)
+            return np.array([np.cos(psi), np.sin(psi)]) * float(st.get('base_u', u))
+        return np.array([np.cos(psi), np.sin(psi)]) * u
+
     # --- motion authority ------------------------------------------------------
     def _enforce_encounter_motion(self):
         """把被标记的会遇船速度写回设计值（场景的逐帧指令会覆盖它）。
@@ -85,18 +306,12 @@ class EncounterResetWrapper(object):
         if world is None:
             return
         n_ob = int(getattr(world, 'num_obstacles', 0))
+        dt = float(getattr(world, 'dt', 1.0))
         for i in range(max(n_ob, 0)):
             ob = world.obstacles[i]
             if not getattr(ob, 'encounter_generated', False):
                 continue
-            mode = getattr(ob, 'encounter_motion_mode', 'constant')
-            if mode == 'stationary':
-                ob.state.p_vel = np.zeros(2)
-                continue
-            psi = float(getattr(ob, 'ra', 0.0))
-            u = float(getattr(ob, 'obstacle_vel', 0.0))
-            if u > 0.0:
-                ob.state.p_vel = np.array([np.cos(psi), np.sin(psi)]) * u
+            ob.state.p_vel = self._mode_velocity(ob, dt)
 
     def step(self, action):
         out = self.env.step(action)
@@ -107,7 +322,17 @@ class EncounterResetWrapper(object):
     # --- env interface ---------------------------------------------------------
     def reset(self, **kwargs):
         out = self.env.reset(**kwargs)
+        self._t = 0
+        self._randomize_initial_heading()
         self.relocate()
+        if bool(self.cfg.get('encounter_verify_rollout', False)):
+            tries = int(self.cfg.get('encounter_verify_max_tries', 6))
+            for _k in range(max(tries, 1)):
+                if self._verify_placement():
+                    break
+                self.relocate()
+        self._assign_motion_modes()
+        self._enforce_encounter_motion()
         return out
 
     def relocate(self):
@@ -148,6 +373,17 @@ class EncounterResetWrapper(object):
             ob.max_speed = float(u_o)
             ob.state.p_vel = np.array([np.cos(psi_o), np.sin(psi_o)]) * float(u_o)
             ob.encounter_generated = True
+            try:
+                _r = np.asarray(p_o, float) - np.asarray(p_s, float)
+                _v = (np.array([np.cos(psi_o), np.sin(psi_o)]) * float(u_o)
+                      - (route / max(norm, 1e-9) * u_s))
+                _vv = float(np.dot(_v, _v))
+                if _vv > 1e-16:
+                    _t = max(0.0, -float(np.dot(_r, _v)) / _vv)
+                    ob.encounter_design_dcpa = float(np.linalg.norm(_r + _v * _t))
+                    ob.encounter_design_tcpa = _t
+            except Exception:
+                pass
             occupied.append((np.asarray(p_o, float), float(ob.size)))
             est = world.obstacles[i + n_ob] if len(world.obstacles) > i + n_ob else None
             if est is not None:
