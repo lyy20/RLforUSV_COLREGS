@@ -619,9 +619,27 @@ class World(object):
         )
         cfg.current_direction = self.angle_ocean_current
 
+    def _entity_state_key(self, entity):
+        """实体自身状态的完整键（vessel_state_from_entity 的全部输入）。"""
+        pos = entity.state.p_pos
+        vel = entity.state.p_vel
+        try:
+            heading = float(self._entity_heading(entity, vel))
+        except Exception:
+            heading = 0.0
+        return (
+            id(entity),
+            float(pos[0]), float(pos[1]),
+            float(vel[0]), float(vel[1]),
+            float(getattr(entity, 'size', 0.0)),
+            heading,
+            str(getattr(entity, 'vessel_role', 'generic')),
+            bool(getattr(entity, 'colregs_compliant', False)),
+        )
     def vessel_state_from_entity(self, entity):
         """Convert a world entity to a COLREGs vessel state."""
-        cached = self._colregs_state_cache.get(id(entity))
+        _key = self._entity_state_key(entity)
+        cached = self._colregs_state_cache.get(_key)
         if cached is not None:
             return cached
         position = np.asarray(entity.state.p_pos, dtype=float)
@@ -641,12 +659,12 @@ class World(object):
             colregs_compliant=getattr(entity, 'colregs_compliant', False),
         )
         if self._colregs_cache_signature is not None:
-            self._colregs_state_cache[id(entity)] = state
+            self._colregs_state_cache[_key] = state
         return state
 
     def evaluate_colregs_between(self, ownship_entity, target_entity):
         self._prepare_colregs_cache([ownship_entity, target_entity])
-        cache_key = (id(ownship_entity), id(target_entity))
+        cache_key = (self._entity_state_key(ownship_entity), self._entity_state_key(target_entity))
         cached_report = self._colregs_report_cache.get(cache_key)
         if cached_report is not None:
             return cached_report
@@ -666,8 +684,9 @@ class World(object):
         self._prepare_colregs_cache([ownship_entity] + vessel_targets)
         ownship = self.vessel_state_from_entity(ownship_entity)
         reports = []
+        _own_key = self._entity_state_key(ownship_entity)
         for target in vessel_targets:
-            cache_key = (id(ownship_entity), id(target))
+            cache_key = (_own_key, self._entity_state_key(target))
             report = self._colregs_report_cache.get(cache_key)
             if report is None:
                 report = self.colregs.evaluate(
@@ -725,9 +744,9 @@ class World(object):
             and getattr(entity.state, 'p_pos', None) is not None
             and getattr(entity, 'is_vessel', False)
         ]
-        signature = self._colregs_entity_signature(valid_entities)
-        if signature != self._colregs_cache_signature:
-            self._colregs_cache_signature = signature
+        _step = int(getattr(self, 'step_count', 0))
+        if _step != getattr(self, '_colregs_cache_step', None):
+            self._colregs_cache_step = _step
             self._colregs_state_cache = {}
             self._colregs_report_cache = {}
 
@@ -737,9 +756,17 @@ class World(object):
             if getattr(obstacle, 'is_vessel', False) and obstacle.movable
         )
 
+    def _agent_index_map(self):
+        """id(entity) -> agents 下标 的缓存（避免每步 O(n) 线性查找）。"""
+        cache = getattr(self, '_agent_index_map_cache', None)
+        if cache is None or len(cache) != len(self.agents):
+            cache = {id(a): i for i, a in enumerate(self.agents)}
+            self._agent_index_map_cache = cache
+        return cache
     def _entity_heading(self, entity, velocity):
-        if entity in self.agents:
-            index = self.agents.index(entity)
+        _map = self._agent_index_map()
+        if id(entity) in _map:
+            index = _map[id(entity)]
             if index < len(self.angle):
                 return float(self.angle[index])
         if hasattr(entity, 'ra'):

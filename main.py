@@ -1831,6 +1831,7 @@ def main():
         'out_of_bounds': config.getfloat('hyperparam', 'REWARD_OUT_OF_BOUNDS', fallback=100.0),
         'timeout': config.getfloat('hyperparam', 'REWARD_TIMEOUT', fallback=25.0),
         'progress_weight': config.getfloat('hyperparam', 'REWARD_PROGRESS_WEIGHT', fallback=12.0),
+        'gamma': config.getfloat('hyperparam', 'GAMMA', fallback=1.0),
         'range_weight': config.getfloat('hyperparam', 'REWARD_RANGE_WEIGHT', fallback=0.5),
         'safety_weight': config.getfloat('hyperparam', 'REWARD_SAFETY_WEIGHT', fallback=20.0),
         'boundary_weight': config.getfloat('hyperparam', 'REWARD_BOUNDARY_WEIGHT', fallback=8.0),

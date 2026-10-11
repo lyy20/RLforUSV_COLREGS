@@ -198,6 +198,28 @@ class EncounterResetWrapper(object):
         self._restore_world(snap)
         return ok
 
+    def _place_landmark_distance(self):
+        """按配置把目标放到本船给定距离上（0/0 表示不干预，保持原行为）。"""
+        dmin = float(self.cfg.get('landmark_initial_distance_min_km', 0.0) or 0.0)
+        dmax = float(self.cfg.get('landmark_initial_distance_max_km', 0.0) or 0.0)
+        if dmax <= 0.0:
+            return
+        if dmin <= 0.0:
+            dmin = dmax
+        world = getattr(self.env, 'world', None)
+        if world is None or not getattr(world, 'landmarks', None):
+            return
+        own = world.agents[0]
+        lm = world.landmarks[0]
+        half = float(self.cfg.get('map_half_size', 1.0))
+        for _ in range(60):
+            d = float(np.random.uniform(dmin, dmax))
+            rad = float(np.random.uniform(0.0, 2.0 * np.pi))
+            p = np.asarray(own.state.p_pos, float) + np.array([np.cos(rad), np.sin(rad)]) * d
+            if abs(p[0]) <= half * 0.9 and abs(p[1]) <= half * 0.9:
+                lm.state.p_pos = p
+                lm.state.p_vel = np.zeros(2)
+                return
     # --- target motion modes ---------------------------------------------------
     MODES = ('stationary', 'constant', 'waypoints', 'escape', 'random', 'weaving', 'orbit')
 
@@ -347,6 +369,7 @@ class EncounterResetWrapper(object):
         self.verify_accepts = 0
         self.verify_first_try_accepts = 0
         self._randomize_initial_heading()
+        self._place_landmark_distance()
         self.relocate()
         if bool(self.cfg.get('encounter_verify_rollout', False)):
             tries = int(self.cfg.get('encounter_verify_max_tries', 6))

@@ -31,6 +31,7 @@ DEFAULT_REWARD_CONFIG = {
     'out_of_bounds': 100.0,
     'timeout': 25.0,
     'progress_weight': 12.0,
+    'gamma': 1.0,
     'range_weight': 0.5,
     'safety_weight': 20.0,
     'boundary_weight': 8.0,
@@ -1485,6 +1486,7 @@ class Scenario(BaseScenario):
         self.reward_out_of_bounds = self.reward_config['out_of_bounds']
         self.reward_timeout = self.reward_config['timeout']
         self.reward_progress_weight = self.reward_config['progress_weight']
+        self.reward_gamma = float(self.reward_config.get('gamma', 1.0))
         self.reward_range_weight = self.reward_config['range_weight']
         self.reward_safety_weight = self.reward_config['safety_weight']
         self.reward_boundary_weight = self.reward_config['boundary_weight']
@@ -2273,6 +2275,14 @@ class Scenario(BaseScenario):
             self.agent_outofworld += 1
             done_state = True
             agent.done_state = True
+            if 'progress' not in components:
+                _pd = getattr(agent, 'reward_prev_target_distance', None)
+                if _pd is not None:
+                    components['progress'] = (
+                        self.reward_progress_weight * float(_pd)
+                        / max(2.0 * getattr(world, 'map_half_size', 2.0), 1.0e-9)
+                    )
+            # Phi(terminal)=0：终止步用 k*d_prev，等效于 Phi(s_terminal)=0，保持策略不变性。
             return float(sum(components.values()))
 
         # Reward 0: terminal collision penalty against dynamic/static obstacles or other entities.
@@ -2289,6 +2299,14 @@ class Scenario(BaseScenario):
                 self.obstacle_collision += 1
             done_state = True
             agent.done_state = True
+            if 'progress' not in components:
+                _pd = getattr(agent, 'reward_prev_target_distance', None)
+                if _pd is not None:
+                    components['progress'] = (
+                        self.reward_progress_weight * float(_pd)
+                        / max(2.0 * getattr(world, 'map_half_size', 2.0), 1.0e-9)
+                    )
+            # Phi(terminal)=0：终止步用 k*d_prev，等效于 Phi(s_terminal)=0，保持策略不变性。
             return float(sum(components.values()))
 
         # Reward 0: terminal collision penalty for getting too close to the target hull.
@@ -2300,6 +2318,14 @@ class Scenario(BaseScenario):
             self.landmark_collision += 1
             done_state = True
             agent.done_state = True
+            if 'progress' not in components:
+                _pd = getattr(agent, 'reward_prev_target_distance', None)
+                if _pd is not None:
+                    components['progress'] = (
+                        self.reward_progress_weight * float(_pd)
+                        / max(2.0 * getattr(world, 'map_half_size', 2.0), 1.0e-9)
+                    )
+            # Phi(terminal)=0：终止步用 k*d_prev，等效于 Phi(s_terminal)=0，保持策略不变性。
             return float(sum(components.values()))
 
         # Reward 1: task completion reward. One safe entry into the target neighborhood ends the episode.
@@ -2328,15 +2354,25 @@ class Scenario(BaseScenario):
             agent.reward_done_reason = 'timeout'
             done_state = True
             agent.done_state = True
+            if 'progress' not in components:
+                _pd = getattr(agent, 'reward_prev_target_distance', None)
+                if _pd is not None:
+                    components['progress'] = (
+                        self.reward_progress_weight * float(_pd)
+                        / max(2.0 * getattr(world, 'map_half_size', 2.0), 1.0e-9)
+                    )
+            # Phi(terminal)=0：终止步用 k*d_prev，等效于 Phi(s_terminal)=0，保持策略不变性。
             return float(sum(components.values()))
 
         # Reward 2: progress reward. Positive when the USV reduces target distance this step.
         previous_distance = getattr(agent, 'reward_prev_target_distance', None)
         distance_scale = max(2.0 * getattr(world, 'map_half_size', 2.0), 1.0e-9)
         if previous_distance is not None:
+            # 势函数塑形（Ng et al. 1999）：r += k(d_prev - gamma*d_now)/scale
+            # 必须与回报折扣 gamma 一致，否则望远镜求和不成立、策略不变性失效。
             components['progress'] = (
                 self.reward_progress_weight
-                * (float(previous_distance) - float(target_distance))
+                * (float(previous_distance) - self.reward_gamma * float(target_distance))
                 / distance_scale
             )
 
@@ -2456,6 +2492,14 @@ class Scenario(BaseScenario):
         agent.reward_last_components = components
         agent.reward_last_metrics = metrics
         self._update_tracking_error_metric(agent, world)
+        if 'progress' not in components:
+            _pd = getattr(agent, 'reward_prev_target_distance', None)
+            if _pd is not None:
+                components['progress'] = (
+                    self.reward_progress_weight * float(_pd)
+                    / max(2.0 * getattr(world, 'map_half_size', 2.0), 1.0e-9)
+                )
+        # Phi(terminal)=0：终止步用 k*d_prev，等效于 Phi(s_terminal)=0，保持策略不变性。
         return float(sum(components.values()))
 
     def _update_task_phase(self, agent, world):

@@ -122,6 +122,9 @@ DEFAULT_ENVIRONMENT_CONFIG = {
     "encounter_verify_max_cpa_m": 300.0,
     # 会遇目标船是否保持航向航速（=遵守 Rule 17 直航义务；使预定 CPA 成立）
     "encounter_target_hold_course": True,
+    # 目标初始距离范围（km）；0/0 = 不干预（保持场景自带 1.0~1.2 行为）
+    "landmark_initial_distance_min_km": 0.0,
+    "landmark_initial_distance_max_km": 0.0,
 }
 
 BOOLEAN_ENVIRONMENT_KEYS = {

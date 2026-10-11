@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Dict, Iterable, Optional, Tuple
 
+import math
 import numpy as np
 
 
@@ -46,7 +47,7 @@ RULE_STAND_ON = "Rule 17: stand-on vessel shall keep course and speed"
 
 
 def wrap_to_pi(angle: float) -> float:
-    return float((angle + np.pi) % (2.0 * np.pi) - np.pi)
+    return (angle + math.pi) % (2.0 * math.pi) - math.pi
 
 
 def signed_angle_between(reference_heading: float, target_angle: float) -> float:
@@ -59,10 +60,10 @@ def angle_abs(angle: float) -> float:
 
 
 def vector_heading(vector: Iterable[float], fallback: float = 0.0) -> float:
-    data = np.asarray(vector, dtype=float).reshape(2)
-    if np.linalg.norm(data) <= EPS:
+    x = float(vector[0]); y = float(vector[1])
+    if x * x + y * y <= EPS * EPS:
         return wrap_to_pi(fallback)
-    return wrap_to_pi(float(np.arctan2(data[1], data[0])))
+    return wrap_to_pi(math.atan2(y, x))
 
 
 def velocity_from_heading(heading: float, speed: float) -> np.ndarray:
@@ -246,20 +247,24 @@ class COLREGsEngine:
         return 0.0 <= metrics["tcpa"] <= self.config.risk_time_horizon and metrics["dcpa"] <= cpa_limit
 
     def _relative_metrics(self, ownship: VesselState, target: VesselState) -> Dict[str, float]:
-        relative_position = target.position - ownship.position
-        relative_velocity = target.velocity - ownship.velocity
-        distance = float(np.linalg.norm(relative_position))
-        rel_speed_sq = float(np.dot(relative_velocity, relative_velocity))
+        rx = float(target.position[0]) - float(ownship.position[0])
+        ry = float(target.position[1]) - float(ownship.position[1])
+        vx = float(target.velocity[0]) - float(ownship.velocity[0])
+        vy = float(target.velocity[1]) - float(ownship.velocity[1])
+        distance = math.sqrt(rx * rx + ry * ry)
+        rel_speed_sq = vx * vx + vy * vy
         if rel_speed_sq <= EPS:
-            tcpa = np.inf
+            tcpa = math.inf
             dcpa = distance
         else:
-            tcpa = float(-np.dot(relative_position, relative_velocity) / rel_speed_sq)
-            closest_position = relative_position + relative_velocity * max(tcpa, 0.0)
-            dcpa = float(np.linalg.norm(closest_position))
+            tcpa = -(rx * vx + ry * vy) / rel_speed_sq
+            _t = tcpa if tcpa > 0.0 else 0.0
+            cx = rx + vx * _t
+            cy = ry + vy * _t
+            dcpa = math.sqrt(cx * cx + cy * cy)
 
-        bearing_to_target = vector_heading(relative_position, fallback=ownship.heading)
-        bearing_from_target = vector_heading(-relative_position, fallback=target.heading)
+        bearing_to_target = vector_heading((rx, ry), fallback=ownship.heading)
+        bearing_from_target = vector_heading((-rx, -ry), fallback=target.heading)
         relative_bearing = signed_angle_between(ownship.heading, bearing_to_target)
         target_relative_bearing = signed_angle_between(target.heading, bearing_from_target)
         heading_difference = angle_abs(target.heading - ownship.heading)
