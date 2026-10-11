@@ -1,6 +1,17 @@
 # =============================================================================
-# 正式实验 第一阶段（筛选）：臂 A3 / seed 3   【修复版 v2】
-# 臂含义：模仿权重消融（唯一变量 w=0.20）
+# 第一阶段（100k）：臂 A3 / seed 3    【内化第一版】
+# 臂含义：模仿权重消融（0.50）
+# -----------------------------------------------------------------------------
+# 任务：长距离 1.0~1.2 km / 400 步 / 静态目标 / CPA 生成开 / 验证关 / 18 并行
+# 奖励（内化第一 + 量级分层）：成功 100；碰撞/越界 120；超时 20；
+#   势函数塑形 60（跨度 +22.9 <= 0.5*成功）；时间罚 0.02；
+#   风险预警 2；边界预警 2；range 删除(0)；平滑 0.05/0.05/0.10
+# 规则信号（一等）：filter=true, RULE_BUFFER=True, w_rule=0.50, DAgger=false
+# 保存间隔 20000（防爆盘）  |  依据：docs/plan/奖励函数设计-文献与方案.md
+# =============================================================================
+# =============================================================================
+# 正式实验 第一阶段（筛选）：臂 A0 / seed 1   【修复版 v2】
+# 臂含义：纯 SAC（无安全层、无规则模仿）
 # -----------------------------------------------------------------------------
 # 本版 = 静态目标 + 400 步 + 关筛选 + 并发 18 + **奖励/课程修复**
 #   P0-1 课程：目标初始距离 0.4~0.6 km（原 1.0~1.2 km）
@@ -10,9 +21,9 @@
 #   距离：1.0~1.2 km（长距离，=场景默认）。课程若启用，最后一档必须=最长档且训练足够回合
 #   课程原则：短距离只能作为中间档，绝不用短距离硬凑成功率（泛化方向性）
 #   其余冻结：静态目标 / 400 步 / CPA 生成开 / 验证关 / parallel_envs=18
-# 差异项：agent_colregs_action_filter_enabled = true
-#         RULE_BUFFER_ENABLED = True
-#         RULE_IMITATION_WEIGHT = 0.20
+# 差异项：agent_colregs_action_filter_enabled = false
+#         RULE_BUFFER_ENABLED = False
+#         RULE_IMITATION_WEIGHT = 0.05
 # 依据：docs/plan/A0A1三万回合诊断.md ｜ 冻结：docs/plan/环境层声明与冻结.md
 # =============================================================================
 # =============================================================================
@@ -61,7 +72,6 @@ PRE_TRAINED = false
 EXP_REP_BUF = false
 START_STEPS = 0
 START_POLICY = random
-
 parallel_envs = 18
 num_agents = 1
 num_landmarks = 1
@@ -136,22 +146,22 @@ dynamic_obstacle_max_accel_mps2 = 0.5
 
 # Reward weights are intentionally unchanged in this first core-logic run.
 REWARD_SUCCESS = 100.0
-REWARD_COLLISION = 50.0
+REWARD_COLLISION = 120.0
 REWARD_OUT_OF_BOUNDS = 120.0
-REWARD_TIMEOUT = 5.0
+REWARD_TIMEOUT = 20.0
 REWARD_PROGRESS_WEIGHT = 60.0
 # Weak normalized distance shaping: it no longer outweighs real progress.
-REWARD_RANGE_WEIGHT = 0.05
+REWARD_RANGE_WEIGHT = 0.0
 # Keep near-obstacle awareness, while collision and COLREGs filtering remain hard safety mechanisms.
-REWARD_SAFETY_WEIGHT = 10.0
-REWARD_BOUNDARY_WEIGHT = 20.0
+REWARD_SAFETY_WEIGHT = 2.0
+REWARD_BOUNDARY_WEIGHT = 2.0
 REWARD_ACTION_SMOOTH_WEIGHT = 0.05
 # Lightweight physical-response penalties. Both use normalized 3-DOF states.
 REWARD_YAW_RATE_WEIGHT = 0.05
 REWARD_RUDDER_SMOOTH_WEIGHT = 0.10
 REWARD_INTERVENTION_ACTIVE_PENALTY = 0.02
 REWARD_INTERVENTION_MAGNITUDE_WEIGHT = 0.10
-REWARD_TIME_PENALTY = 0.05
+REWARD_TIME_PENALTY = 0.02
 REWARD_SAFE_CLEARANCE = 0.030
 REWARD_BOUNDARY_SAFE_DISTANCE = 0.100
 
@@ -189,7 +199,7 @@ RULE_BUFFER_SIZE = 100000
 RULE_BUFFER_MIN_SIZE = 1000
 RULE_ACTOR_BATCH_SIZE = 16
 RULE_SAMPLE_MODE = uniform
-RULE_IMITATION_WEIGHT = 0.20
+RULE_IMITATION_WEIGHT = 0.50
 # 是否启用持久化 COLREGs 规则状态。默认关闭以保持 0904 旧实验行为。
 COLREGS_PERSISTENT_STATE_ENABLED = true
 # 风险消失后连续确认多少个环境步才释放持久化规则状态。
@@ -208,7 +218,6 @@ RULE_REWARD_ENABLED = false
 RULE_ACTION_ALIGNMENT_WEIGHT = 0.0
 RULE_CPA_WEIGHT = 0.0
 RULE_OBLIGATION_PENALTY = 0.0
-
 encounter_generation_mode = 1
 encounter_tcpa_min_s = 60.0
 encounter_tcpa_max_s = 120.0
