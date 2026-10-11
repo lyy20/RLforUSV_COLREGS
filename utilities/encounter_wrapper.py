@@ -199,7 +199,11 @@ class EncounterResetWrapper(object):
         return ok
 
     def _place_landmark_distance(self):
-        """按配置把目标放到本船给定距离上（0/0 表示不干预，保持原行为）。"""
+        """按配置把目标放到本船给定距离上（0/0 表示不干预，保持原行为）。
+
+        落点必须留出边界安全距离，否则目标会落在边界惩罚区内；
+        若随机方向找不到合法点，则朝地图中心方向兜底，绝不静默退回场景默认距离。
+        """
         dmin = float(self.cfg.get('landmark_initial_distance_min_km', 0.0) or 0.0)
         dmax = float(self.cfg.get('landmark_initial_distance_max_km', 0.0) or 0.0)
         if dmax <= 0.0:
@@ -212,14 +216,31 @@ class EncounterResetWrapper(object):
         own = world.agents[0]
         lm = world.landmarks[0]
         half = float(self.cfg.get('map_half_size', 1.0))
-        for _ in range(60):
+        safe = float(self.cfg.get('REWARD_BOUNDARY_SAFE_DISTANCE', 0.100) or 0.100)
+        lim = max(half - safe, 0.1 * half)
+        own_p = np.asarray(own.state.p_pos, float)
+
+        def _put(p):
+            lm.state.p_pos = np.asarray(p, float)
+            lm.state.p_vel = np.zeros(2)
+
+        for _ in range(120):
             d = float(np.random.uniform(dmin, dmax))
             rad = float(np.random.uniform(0.0, 2.0 * np.pi))
-            p = np.asarray(own.state.p_pos, float) + np.array([np.cos(rad), np.sin(rad)]) * d
-            if abs(p[0]) <= half * 0.9 and abs(p[1]) <= half * 0.9:
-                lm.state.p_pos = p
-                lm.state.p_vel = np.zeros(2)
+            p = own_p + np.array([np.cos(rad), np.sin(rad)]) * d
+            if abs(p[0]) <= lim and abs(p[1]) <= lim:
+                _put(p)
                 return
+        n = float(np.linalg.norm(own_p))
+        if n > 1e-9:
+            d = min(float(np.random.uniform(dmin, dmax)), max(n - lim, 0.05))
+            p = own_p - own_p / n * d
+            if abs(p[0]) <= lim and abs(p[1]) <= lim:
+                _put(p)
+                return
+        p = np.clip(own_p, -lim, lim)
+        _put(p)
+
     # --- target motion modes ---------------------------------------------------
     MODES = ('stationary', 'constant', 'waypoints', 'escape', 'random', 'weaving', 'orbit')
 
