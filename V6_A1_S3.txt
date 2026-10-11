@@ -4,7 +4,7 @@
 # -----------------------------------------------------------------------------
 # 本版 = 静态目标 + 400 步 + 关筛选 + 并发 18 + **奖励/课程修复**
 #   P0-1 课程：目标初始距离 0.4~0.6 km（原 1.0~1.2 km）
-#   P0-2 势函数塑形（Ng 1999 三件套）：progress_weight 210（k=70/km）、公式用 γ、终止处 Φ=0
+#   P0-2 势函数塑形（Ng 1999 三件套）：progress_weight 60（k=20/km，跨度 +10，捕获增量 +1.3）、公式用 γ、终止处 Φ=0
 #   P0-3 终端风险：出界/碰撞 −150 → −50
 #   P1-1 超时罚：−25 → −5
 #   其余冻结：静态目标 / 400 步 / CPA 生成开 / 验证关 / parallel_envs=18
@@ -137,7 +137,7 @@ REWARD_SUCCESS = 100.0
 REWARD_COLLISION = 50.0
 REWARD_OUT_OF_BOUNDS = 50.0
 REWARD_TIMEOUT = 5.0
-REWARD_PROGRESS_WEIGHT = 210.0
+REWARD_PROGRESS_WEIGHT = 60.0
 # Weak normalized distance shaping: it no longer outweighs real progress.
 REWARD_RANGE_WEIGHT = 0.05
 # Keep near-obstacle awareness, while collision and COLREGs filtering remain hard safety mechanisms.
